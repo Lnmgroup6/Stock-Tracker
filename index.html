@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>StockTrack — Inventory Manager</title>
-  <meta name="description" content="Simple stock balance tracker for your WhatsApp group." />
+  <title>StockTrack — Cloud ERP</title>
+  <meta name="description" content="Cloud-synced inventory manager." />
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#161b22" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -15,6 +15,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   
+  <!-- Firebase SDKs (Compat Version for Vanilla JS) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
   <style>
     :root {
       --bg: #0d1117; --surface: #161b22; --surface2: #21262d; --border: #30363d;
@@ -48,6 +52,7 @@
     }
     .header-title { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; }
     .header-sub   { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+    .cloud-indicator { font-size: 10px; color: var(--primary); font-weight: 700; margin-left: 6px; }
     
     .header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .header-btn {
@@ -55,113 +60,47 @@
       cursor: pointer; display: flex; align-items: center; gap: 4px;
       transition: all var(--transition);
     }
-    .btn-install {
-      background: linear-gradient(135deg, rgba(88,166,255,0.2), rgba(188,140,255,0.2));
-      border: 1px solid var(--primary); color: var(--primary);
-    }
-    .btn-install:hover { background: var(--primary); color: #fff; }
-    .btn-logout {
-      background: transparent; border: 1px solid var(--border); color: var(--text-muted);
-    }
-    .btn-logout:hover { border-color: var(--text); color: var(--text); }
-    .header-date  { font-size: 10px; color: var(--text-muted); text-align: right; line-height: 1.4; display:none; }
-    @media (min-width: 360px) { .header-date { display:block; } }
-
-    /* SHARED DATA BANNER */
-    .shared-banner {
-      background: linear-gradient(135deg, rgba(88,166,255,0.12), rgba(188,140,255,0.12));
-      border-bottom: 1px solid rgba(88,166,255,0.3);
-      padding: 12px 16px; display: flex;
-      align-items: center; gap: 12px; flex-wrap: wrap;
-    }
-    .banner-icon { font-size: 22px; flex-shrink: 0; }
-    .banner-text { flex: 1; min-width: 0; }
-    .banner-text strong { display: block; font-size: 13px; color: var(--primary); }
-    .banner-text span   { font-size: 11px; color: var(--text-muted); }
-    .banner-actions { display: flex; gap: 8px; }
-    .banner-btn-load {
-      padding: 7px 14px; background: var(--primary); border: none;
-      border-radius: 100px; color: #fff; font-size: 12px; font-weight: 700;
-      cursor: pointer; font-family: 'Inter', sans-serif;
-    }
-    .banner-btn-dismiss {
-      padding: 7px 10px; background: transparent; border: 1px solid var(--border);
-      border-radius: 100px; color: var(--text-muted); font-size: 12px; font-weight: 600;
-      cursor: pointer; font-family: 'Inter', sans-serif;
-    }
+    .btn-install { background: linear-gradient(135deg, rgba(88,166,255,0.2), rgba(188,140,255,0.2)); border: 1px solid var(--primary); color: var(--primary); }
+    .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
 
     /* MOBILE TOUCH FIXES */
-    button, a, .nav-item, .filter-chip, .icon-btn, .export-btn,
-    .type-btn, .stock-item, .tx-item, .product-item, .banner-btn-load,
-    .banner-btn-dismiss, .btn-m-cancel, .btn-m-confirm-red, .btn-m-confirm-blue,
-    .btn-cancel-edit, .btn-save-product, .header-btn, .quick-date-btn {
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
+    button, a, .nav-item, .filter-chip, .icon-btn, .export-btn, .type-btn, .btn-m-cancel, .btn-m-confirm-red, .btn-m-confirm-blue, .btn-cancel-edit, .btn-save-product, .header-btn, .quick-date-btn { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     .nav-item, .filter-chip { user-select: none; -webkit-user-select: none; }
 
     /* BOTTOM NAV */
     .bottom-nav {
-      background: var(--surface); border-top: 1px solid var(--border);
-      display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-      height: calc(64px + env(safe-area-inset-bottom, 0px));
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      background: var(--surface); border-top: 1px solid var(--border); display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+      height: calc(64px + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px);
     }
-    .nav-item {
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 3px; cursor: pointer; border: none;
-      background: transparent; color: var(--text-muted); font-size: 10px;
-      font-weight: 500; transition: color var(--transition); padding: 6px 0; position: relative;
-    }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; border: none; background: transparent; color: var(--text-muted); font-size: 10px; font-weight: 500; transition: color var(--transition); padding: 6px 0; position: relative; }
     .nav-item .nav-icon { font-size: 20px; transition: transform var(--transition); }
     .nav-item.active { color: var(--gold); }
     .nav-item.active .nav-icon { transform: scale(1.15); }
-    .nav-item::before {
-      content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 2px;
-      background: var(--gold); border-radius: 0 0 4px 4px;
-      transform: scaleX(0); transition: transform var(--transition);
-    }
+    .nav-item::before { content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 2px; background: var(--gold); border-radius: 0 0 4px 4px; transform: scaleX(0); transition: transform var(--transition); }
     .nav-item.active::before { transform: scaleX(1); }
 
     /* PAGE WRAPPER */
-    .page {
-      display: none; flex: 1; padding: 16px 16px calc(80px + env(safe-area-inset-bottom, 0px));
-      max-width: 520px; width: 100%; margin: 0 auto;
-    }
+    .page { display: none; flex: 1; padding: 16px 16px calc(80px + env(safe-area-inset-bottom, 0px)); max-width: 520px; width: 100%; margin: 0 auto; }
     .page.active { display: block; animation: fadeIn 0.2s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
     /* SUMMARY CARDS */
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
-    .summary-card {
-      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 14px; position: relative; overflow: hidden; cursor: pointer;
-    }
-    .summary-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    }
+    .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; position: relative; overflow: hidden; cursor: pointer; }
+    .summary-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
     .summary-card.blue::before  { background: var(--primary); }
     .summary-card.amber::before { background: var(--amber); }
     .summary-card.green::before { background: var(--green); }
     .summary-card.gold::before  { background: var(--gold); }
-    .summary-card.red::before   { background: var(--red); }
     .summary-card .label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
     .summary-card .value { font-size: 24px; font-weight: 800; margin-top: 4px; letter-spacing: -0.5px; }
     .summary-card .icon  { position: absolute; right: 12px; bottom: 12px; font-size: 24px; opacity: 0.2; }
 
     /* SECTION TITLE */
-    .section-title {
-      font-size: 13px; font-weight: 700; color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: 0.8px; margin: 18px 0 10px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
+    .section-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin: 18px 0 10px; display: flex; align-items: center; justify-content: space-between; }
 
     /* STOCK LIST */
-    .stock-item {
-      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
-      transition: border-color var(--transition);
-    }
+    .stock-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; transition: border-color var(--transition); }
     .stock-item.low      { border-color: rgba(227,179,65,0.4); }
     .stock-item.critical { border-color: rgba(248,81,73,0.5); }
     .stock-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
@@ -177,45 +116,18 @@
     .bal-good     { color: var(--green); }
     .bal-low      { color: var(--amber); }
     .bal-critical { color: var(--red); }
-
-    .zero-balance-header {
-      background: rgba(227,179,65,0.08); border: 1px dashed rgba(227,179,65,0.3);
-      color: var(--amber); padding: 12px 16px; border-radius: var(--radius);
-      margin-top: 16px; margin-bottom: 10px; font-size: 13px; font-weight: 700;
-      cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-      transition: background var(--transition);
-    }
-    .zero-balance-header:active { background: rgba(227,179,65,0.15); }
+    .zero-balance-header { background: rgba(227,179,65,0.08); border: 1px dashed rgba(227,179,65,0.3); color: var(--amber); padding: 12px 16px; border-radius: var(--radius); margin-top: 16px; margin-bottom: 10px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
 
     /* FORMS */
     .form-group { margin-bottom: 14px; }
     .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
-    .form-control {
-      width: 100%; padding: 13px 14px; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); color: var(--text); font-size: 15px; font-family: 'Inter', sans-serif;
-      outline: none; transition: border-color var(--transition), box-shadow var(--transition);
-      -webkit-appearance: none; color-scheme: dark;
-    }
+    .form-control { width: 100%; padding: 13px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 15px; font-family: 'Inter', sans-serif; outline: none; transition: border-color var(--transition), box-shadow var(--transition); color-scheme: dark; }
     .form-control:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow); }
-    .form-control[readonly] { opacity: 0.7; cursor: not-allowed; }
-    
-    select.form-control {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b949e' d='M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
-    }
     .type-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-    .type-btn {
-      padding: 12px; border: 1px solid var(--border); background: var(--surface2);
-      border-radius: var(--radius-sm); color: var(--text-muted); font-size: 14px; font-weight: 600;
-      cursor: pointer; transition: all var(--transition); font-family: 'Inter', sans-serif; text-align: center;
-    }
-    /* UPDATED SALE COLOR TO GOLD/AMBER */
+    .type-btn { padding: 12px; border: 1px solid var(--border); background: var(--surface2); border-radius: var(--radius-sm); color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer; transition: all var(--transition); font-family: 'Inter', sans-serif; text-align: center; }
     .type-btn.active.sale     { background: var(--gold-glow);   border-color: var(--gold);   color: var(--gold); }
     .type-btn.active.purchase { background: var(--green-glow); border-color: var(--green); color: var(--green); }
-    .btn {
-      width: 100%; padding: 15px; border-radius: var(--radius); border: none; font-size: 15px;
-      font-weight: 700; cursor: pointer; transition: all var(--transition); font-family: 'Inter', sans-serif;
-    }
+    .btn { width: 100%; padding: 15px; border-radius: var(--radius); border: none; font-size: 15px; font-weight: 700; cursor: pointer; transition: all var(--transition); font-family: 'Inter', sans-serif; }
     .btn-sale     { background: linear-gradient(135deg, #f2c94c, #d4a72c);   color: #111; }
     .btn-purchase { background: linear-gradient(135deg, var(--green), #2da44e); color: #fff; }
     .btn-add      { background: linear-gradient(135deg, var(--gold), var(--amber)); color: #111; }
@@ -224,46 +136,17 @@
     /* HISTORY */
     .filter-row { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
     .filter-row::-webkit-scrollbar { display: none; }
-    .filter-chip {
-      flex-shrink: 0; padding: 6px 14px; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 100px; font-size: 12px; font-weight: 500; cursor: pointer;
-      color: var(--text-muted); transition: all var(--transition);
-    }
+    .filter-chip { flex-shrink: 0; padding: 6px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 100px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--text-muted); transition: all var(--transition); }
     .filter-chip.active { background: var(--gold); border-color: var(--gold); color: #111; font-weight: 700;}
-    
-    .date-filter-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;
-    }
-    .quick-date-row {
-      display: flex; gap: 8px; margin-bottom: 16px; justify-content: flex-end;
-    }
-    .quick-date-btn {
-      background: transparent; border: 1px solid var(--border); color: var(--text-muted);
-      font-size: 11px; padding: 4px 10px; border-radius: 100px; cursor: pointer;
-    }
-    .quick-date-btn:active { background: var(--surface2); }
+    .date-filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .quick-date-row { display: flex; gap: 8px; margin-bottom: 16px; justify-content: flex-end; }
+    .quick-date-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-size: 11px; padding: 4px 10px; border-radius: 100px; cursor: pointer; }
 
     /* EXPORT GROUP */
     .export-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-    .export-btn {
-      width: 100%; padding: 13px; background: var(--surface2); border: 1px dashed var(--border);
-      border-radius: var(--radius); color: var(--text-muted); font-size: 14px; font-weight: 600;
-      cursor: pointer; transition: all var(--transition); font-family: 'Inter', sans-serif;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .export-btn:hover { border-color: var(--gold); color: var(--gold); }
-    .export-info {
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); padding: 12px 14px;
-      font-size: 12px; color: var(--text-muted); line-height: 1.6;
-      margin-bottom: 12px;
-    }
-    .export-info strong { color: var(--text); }
-
-    .tx-item {
-      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
-    }
+    .export-btn { width: 100%; padding: 13px; background: var(--surface2); border: 1px dashed var(--border); border-radius: var(--radius); color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    
+    .tx-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
     .tx-badge { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
     .tx-badge.sale     { background: var(--gold-glow); color: var(--gold); }
     .tx-badge.purchase { background: var(--green-glow); color: var(--green); }
@@ -273,8 +156,8 @@
     .tx-right   { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
     .tx-amount  { text-align: right; }
     .tx-amount .qty { font-size: 17px; font-weight: 700; }
-    .tx-amount.sale .qty     { color: var(--gold); }
-    .tx-amount.sale .qty::before     { content: '−'; }
+    .tx-amount.sale .qty { color: var(--gold); }
+    .tx-amount.sale .qty::before { content: '−'; }
     .tx-amount.purchase .qty { color: var(--green); }
     .tx-amount.purchase .qty::before { content: '+'; }
     .tx-amount .unit { font-size: 10px; color: var(--text-muted); }
@@ -282,156 +165,95 @@
 
     .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
     .empty-state .emoji { font-size: 44px; margin-bottom: 12px; }
-    .empty-state p { font-size: 14px; }
 
-    /* MASTER DATA (Products & Parties) */
-    .master-form-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 18px 16px; margin-bottom: 16px;
-    }
+    /* MASTER DATA */
+    .master-form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 16px; margin-bottom: 16px; }
     .master-form-card.editing { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow); }
     .master-form-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .btn-row  { display: flex; gap: 10px; margin-top: 14px; }
-    .btn-cancel-edit {
-      flex: 0 0 auto; padding: 15px 18px; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: var(--radius); color: var(--text-muted); font-size: 14px; font-weight: 600;
-      cursor: pointer; font-family: 'Inter', sans-serif; transition: all var(--transition);
-    }
-    .btn-cancel-edit:hover { border-color: var(--text-muted); color: var(--text); }
-
-    .master-item {
-      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
-    }
+    .btn-cancel-edit { flex: 0 0 auto; padding: 15px 18px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer; }
+    .master-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
     .master-info   { flex: 1; min-width: 0; }
     .master-name   { font-size: 15px; font-weight: 600; display:flex; align-items:center; gap:8px;}
     .master-detail { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
     .master-actions { display: flex; gap: 8px; flex-shrink: 0; }
-
-    .icon-btn {
-      width: 34px; height: 34px; border: 1px solid var(--border); background: var(--surface2);
-      border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center;
-      justify-content: center; font-size: 15px; transition: all var(--transition);
-    }
-    .icon-btn.edit:hover { border-color: var(--gold); background: var(--gold-glow); }
-    .icon-btn.del:hover  { border-color: var(--red);     background: var(--red-glow); }
-    .icon-btn.check { border-color: var(--border); color: var(--text-muted); }
-    .icon-btn.check:hover { border-color: var(--green); color: var(--green); background: var(--green-glow); }
+    .icon-btn { width: 34px; height: 34px; border: 1px solid var(--border); background: var(--surface2); border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; }
 
     /* MODALS & OVERLAYS */
-    .modal-overlay {
-      position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-      background: rgba(0,0,0,0.75); z-index: 200;
-      display: none; align-items: flex-end; justify-content: center;
-    }
+    .modal-overlay { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(0,0,0,0.75); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
     .modal-overlay.open { display: flex; animation: modalFadeIn 0.18s ease; }
     @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .modal {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 20px 20px 0 0;
-      padding: 24px 20px 40px; width: 100%; max-width: 520px;
-      animation: modalSlideUp 0.22s cubic-bezier(0.4,0,0.2,1);
-      max-height: 85dvh; overflow-y: auto;
-    }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px 20px 0 0; padding: 24px 20px 40px; width: 100%; max-width: 520px; animation: modalSlideUp 0.22s cubic-bezier(0.4,0,0.2,1); max-height: 85dvh; overflow-y: auto; }
     @keyframes modalSlideUp { from { transform: translateY(60px); } to { transform: translateY(0); } }
     .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 4px; margin: 0 auto 20px; }
     .modal-title  { font-size: 17px; font-weight: 700; margin-bottom: 14px; }
     .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
-    .btn-m-cancel      { flex: 1; padding: 13px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
-    .btn-m-confirm-red { flex: 1; padding: 13px; background: var(--red); border: none; color: #fff; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
-    .btn-m-confirm-blue{ flex: 1; padding: 13px; background: linear-gradient(135deg, var(--gold), var(--amber)); border: none; color: #111; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .btn-m-cancel      { flex: 1; padding: 13px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-m-confirm-red { flex: 1; padding: 13px; background: var(--red); border: none; color: #fff; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-m-confirm-blue{ flex: 1; padding: 13px; background: linear-gradient(135deg, var(--gold), var(--amber)); border: none; color: #111; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; }
 
-    /* LOGIN SCREEN OVERLAY */
-    #login-overlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: var(--bg); z-index: 9999;
-      display: flex; align-items: center; justify-content: center; padding: 20px;
-    }
-    #login-overlay .modal {
-      border-radius: var(--radius); padding: 30px 24px; animation: modalFadeIn 0.3s ease;
-      transform: none; margin: auto; border: 1px solid var(--border);
-    }
-    .role-badge {
-      display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;
-      background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: 0.5px;
-    }
+    #login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    #login-overlay .modal { border-radius: var(--radius); padding: 30px 24px; margin: auto; border: 1px solid var(--border); }
+    .role-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); text-transform: uppercase; }
     .role-badge.admin { background: rgba(188,140,255,0.15); color: var(--purple); border-color: rgba(188,140,255,0.4); }
     .role-badge.user  { background: rgba(88,166,255,0.15); color: var(--primary); border-color: rgba(88,166,255,0.4); }
 
-    .install-step-card {
-      background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
-      padding: 12px 14px; margin-bottom: 10px; font-size: 13px; line-height: 1.5;
-    }
-    .install-step-card strong { color: var(--primary); display: block; margin-bottom: 4px; font-size: 13px; }
-
-    /* TOAST */
-    .toast {
-      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
-      background: var(--surface2); color: var(--text); border: 1px solid var(--border);
-      border-radius: 100px; padding: 10px 20px; font-size: 13px; font-weight: 600;
-      opacity: 0; pointer-events: none; transition: all 0.25s ease;
-      z-index: 9999; white-space: nowrap; box-shadow: var(--shadow);
-    }
+    .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 100px; padding: 10px 20px; font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 9999; white-space: nowrap; box-shadow: var(--shadow); }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    @media (min-width: 520px) {
-      .bottom-nav { max-width: 520px; left: 50%; transform: translateX(-50%); right: auto; width: 520px; }
-      .toast      { max-width: 480px; }
+    @media (min-width: 520px) { .bottom-nav { max-width: 520px; left: 50%; transform: translateX(-50%); right: auto; width: 520px; } }
+    
+    #cloud-sync-overlay {
+      position:fixed; top:0; left:0; right:0; bottom:0; background:var(--bg); z-index:10000;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
     }
-    html, body { overflow-x: hidden; }
   </style>
 </head>
 <body>
 
+<!-- CLOUD SYNC OVERLAY -->
+<div id="cloud-sync-overlay">
+  <div style="font-size:40px; margin-bottom:16px;">☁️</div>
+  <div style="font-size:18px; font-weight:700; color:var(--primary);">Connecting to Cloud...</div>
+  <div style="font-size:13px; color:var(--text-muted); margin-top:8px;" id="cloud-sync-status">Syncing real-time data</div>
+</div>
+
 <!-- LOGIN OVERLAY -->
-<div id="login-overlay">
+<div id="login-overlay" style="display:none;">
   <div class="modal">
     <div style="text-align:center; font-size:40px; margin-bottom:12px">📦</div>
-    <div class="modal-title" style="text-align:center">Welcome to StockTrack</div>
+    <div class="modal-title" style="text-align:center">StockTrack ERP</div>
     <p style="font-size:13px; color:var(--text-muted); text-align:center; margin-bottom:24px; line-height:1.5;">
-      Please log in with your Name and Password to access the inventory system.
+      Please log in with your Name and Password.
     </p>
-    
     <div class="form-group">
       <label class="form-label" for="login-name">Name</label>
       <input class="form-control" id="login-name" type="text" placeholder="Enter your name" />
     </div>
-    
     <div class="form-group">
       <label class="form-label" for="login-pass">Password</label>
       <input class="form-control" id="login-pass" type="password" placeholder="Enter your password" />
     </div>
-    
     <button class="btn btn-add" style="margin-top:20px; margin-bottom:24px" onclick="performLogin()">Log In</button>
-    
-    <div style="border-top: 1px solid var(--border); padding-top: 20px; text-align: center;">
-      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">First time here or received an update?</div>
-      <button class="export-btn" style="border-color: rgba(88,166,255,0.4); color: var(--primary); font-size: 13px; padding: 10px;" onclick="triggerImportDialog()">
-        📥 Import Data File
-      </button>
-    </div>
   </div>
 </div>
 
 <div id="app">
-
   <!-- HEADER -->
   <header class="header">
     <div class="header-brand">
       <div class="header-icon">📦</div>
       <div>
-        <div class="header-title">StockTrack <span id="header-role-badge" class="role-badge"></span></div>
-        <div class="header-sub">Welcome, <span id="header-user-name">User</span></div>
+        <div class="header-title">StockTrack <span class="cloud-indicator">☁️ Sync</span></div>
+        <div class="header-sub"><span id="header-user-name">User</span> <span id="header-role-badge" class="role-badge" style="margin-left:4px"></span></div>
       </div>
     </div>
     <div class="header-actions">
-      <button class="header-btn btn-install" id="btn-install-app" onclick="triggerInstallFlow()">📲 Install</button>
       <button class="header-btn btn-logout" onclick="performLogout()">Log out</button>
     </div>
   </header>
 
-  <!-- PAGE: DASHBOARD -->
+  <!-- DASHBOARD -->
   <div class="page active" id="page-dashboard">
     <div class="summary-grid">
       <div class="summary-card blue" onclick="showPage('master')">
@@ -459,7 +281,7 @@
     <div id="stock-list"></div>
   </div>
 
-  <!-- PAGE: RECORD -->
+  <!-- RECORD -->
   <div class="page" id="page-record">
     <div class="section-title" style="margin-top:0">Transaction Type</div>
     <div class="type-toggle">
@@ -474,20 +296,15 @@
       <label class="form-label" for="rec-qty">Quantity</label>
       <input class="form-control" id="rec-qty" type="number" min="1" placeholder="Enter quantity" />
     </div>
-    
-    <!-- Party Autocomplete -->
     <div class="form-group">
       <label class="form-label" id="lbl-rec-party" for="rec-party">Sale To</label>
       <input class="form-control" id="rec-party" type="text" list="party-list" placeholder="Search or enter party name" />
       <datalist id="party-list"></datalist>
     </div>
-
-    <!-- Lifting Date (Sale Only) -->
     <div class="form-group" id="group-rec-lift-date">
       <label class="form-label" for="rec-lift-date">Last Lifting Date (Optional)</label>
       <input class="form-control" id="rec-lift-date" type="date" />
     </div>
-
     <div class="form-group">
       <label class="form-label" for="rec-note">Rate / Note (optional)</label>
       <input class="form-control" id="rec-note" type="text" maxlength="150" placeholder="e.g. @DO Rate/ Actual Rate" />
@@ -495,24 +312,16 @@
     <button class="btn btn-sale" id="submit-btn" onclick="recordTransaction()">Record Sale</button>
   </div>
 
-  <!-- PAGE: HISTORY -->
+  <!-- HISTORY -->
   <div class="page" id="page-history">
     <div class="export-group">
-      <button class="export-btn" onclick="exportXLSX()">
-        📊 Export as Excel (.xlsx) — 3 Sheets
-      </button>
+      <button class="export-btn" onclick="exportXLSX()">📊 Export as Excel (.xlsx)</button>
       <div style="display:flex;gap:10px;">
-        <button class="export-btn" onclick="exportDataJSON()" style="flex:1; border-color:rgba(63,185,80,0.5);color:var(--green);font-size:12px;">
-          📤 Backup App Data
-        </button>
-        <button class="export-btn" onclick="triggerImportDialog()" style="flex:1; border-color:rgba(88,166,255,0.5);color:var(--primary);font-size:12px;">
-          📥 Restore Data
-        </button>
+        <button class="export-btn" onclick="exportDataJSON()" style="flex:1; border-color:rgba(63,185,80,0.5);color:var(--green);font-size:12px;">📤 Cloud Backup</button>
+        <button class="export-btn" onclick="triggerImportDialog()" style="flex:1; border-color:rgba(88,166,255,0.5);color:var(--primary);font-size:12px;">📥 Upload to Cloud</button>
       </div>
     </div>
-
     <div class="section-title" style="margin-top:20px;">Transaction Log Filters</div>
-    
     <div class="form-group">
       <label class="form-label" style="font-size:10px;">Limit view</label>
       <select class="form-control" id="hist-limit" onchange="renderHistory()">
@@ -521,7 +330,6 @@
         <option value="all">Show All</option>
       </select>
     </div>
-
     <div class="date-filter-grid">
       <div class="form-group" style="margin-bottom:0">
         <label class="form-label" style="font-size:10px;">From Date</label>
@@ -537,7 +345,6 @@
       <button class="quick-date-btn" onclick="setHistoryRange(7)">7 Days</button>
       <button class="quick-date-btn" onclick="setHistoryRange(null)">Clear</button>
     </div>
-
     <div class="filter-row">
       <div class="filter-chip active" id="chip-filter-all" onclick="setFilter('all')">All</div>
       <div class="filter-chip" id="chip-filter-sale" onclick="setFilter('sale')">Sales</div>
@@ -546,108 +353,65 @@
     <div id="history-list"></div>
   </div>
 
-  <!-- PAGE: MASTER DATA (Products & Parties) -->
+  <!-- MASTER DATA -->
   <div class="page" id="page-master">
     <div class="type-toggle" style="margin-bottom:20px;">
       <button class="type-btn active" id="btn-tab-products" onclick="setMasterTab('products')" style="border-color:var(--border); color:var(--text);">📦 Products</button>
       <button class="type-btn"        id="btn-tab-parties"  onclick="setMasterTab('parties')"  style="border-color:var(--border); color:var(--text);">🏢 Parties</button>
     </div>
-
-    <!-- PRODUCTS SECTION -->
     <div id="master-sec-products">
       <div class="master-form-card" id="product-form-card">
         <div class="master-form-title" id="product-form-title">➕ Add New Product</div>
-        <div class="form-group">
-          <label class="form-label" for="p-name">Product Name</label>
-          <input class="form-control" id="p-name" type="text" placeholder="e.g. SBD M-30 @4908" />
-        </div>
+        <div class="form-group"><label class="form-label" for="p-name">Product Name</label><input class="form-control" id="p-name" type="text" placeholder="e.g. SBD M-30 @4908" /></div>
         <div class="form-row">
-          <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" for="p-opening">Opening Stock</label>
-            <input class="form-control" id="p-opening" type="number" min="0" placeholder="0" />
-          </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" for="p-threshold">Low Stock Alert At</label>
-            <input class="form-control" id="p-threshold" type="number" min="0" placeholder="10" />
-          </div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label" for="p-opening">Opening Stock</label><input class="form-control" id="p-opening" type="number" min="0" placeholder="0" /></div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label" for="p-threshold">Low Alert At</label><input class="form-control" id="p-threshold" type="number" min="0" placeholder="10" /></div>
         </div>
         <div class="form-row" style="margin-top:14px">
-          <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" for="p-unit">Unit (optional)</label>
-            <input class="form-control" id="p-unit" type="text" placeholder="e.g. Qtls" />
-          </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" for="p-lift-by">Lifting By (Deadline)</label>
-            <input class="form-control" id="p-lift-by" type="date" />
-          </div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label" for="p-unit">Unit</label><input class="form-control" id="p-unit" type="text" placeholder="e.g. Qtls" /></div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label" for="p-lift-by">Lifting By (Deadline)</label><input class="form-control" id="p-lift-by" type="date" /></div>
         </div>
         <div class="btn-row">
           <button class="btn-cancel-edit" id="btn-cancel-product-edit" style="display:none" onclick="cancelProductEdit()">✕ Cancel</button>
           <button class="btn btn-add" id="btn-save-product" onclick="saveProduct()">Add Product</button>
         </div>
       </div>
-      
       <div class="section-title">Your Products</div>
       <div id="product-list"></div>
     </div>
-
-    <!-- PARTIES SECTION -->
     <div id="master-sec-parties" style="display:none;">
       <div class="master-form-card" id="party-form-card">
         <div class="master-form-title" id="party-form-title">➕ Add New Party</div>
-        <div class="form-group">
-          <label class="form-label" for="pt-name">Party Name</label>
-          <input class="form-control" id="pt-name" type="text" placeholder="e.g. LNM Group" />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="pt-nick">Nick Name (optional)</label>
-          <input class="form-control" id="pt-nick" type="text" placeholder="e.g. LNM" />
-        </div>
+        <div class="form-group"><label class="form-label" for="pt-name">Party Name</label><input class="form-control" id="pt-name" type="text" /></div>
+        <div class="form-group"><label class="form-label" for="pt-nick">Nick Name</label><input class="form-control" id="pt-nick" type="text" /></div>
         <div class="form-row">
-          <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" for="pt-city">City</label>
-            <input class="form-control" id="pt-city" type="text" placeholder="e.g. Delhi" />
-          </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" for="pt-mobile">Mobile No (optional)</label>
-            <input class="form-control" id="pt-mobile" type="text" placeholder="e.g. 9876543210" />
-          </div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label" for="pt-city">City</label><input class="form-control" id="pt-city" type="text" /></div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label" for="pt-mobile">Mobile No</label><input class="form-control" id="pt-mobile" type="text" /></div>
         </div>
         <div class="btn-row">
           <button class="btn-cancel-edit" id="btn-cancel-party-edit" style="display:none" onclick="cancelPartyEdit()">✕ Cancel</button>
           <button class="btn btn-add" id="btn-save-party" onclick="saveParty()">Add Party</button>
         </div>
       </div>
-      
       <div class="section-title">Saved Parties</div>
       <div id="party-list-display"></div>
     </div>
   </div>
 
-  <!-- PAGE: USERS (Admin Only) -->
+  <!-- USERS -->
   <div class="page" id="page-users">
     <div class="master-form-card">
       <div class="master-form-title">➕ Create New User</div>
-      <div class="form-group">
-        <label class="form-label" for="new-user-name">Name</label>
-        <input class="form-control" id="new-user-name" type="text" placeholder="e.g. Piyush" />
-      </div>
+      <div class="form-group"><label class="form-label" for="new-user-name">Name</label><input class="form-control" id="new-user-name" type="text" /></div>
       <div class="form-row">
-        <div class="form-group" style="margin-bottom:0">
-          <label class="form-label" for="new-user-pass">Password</label>
-          <input class="form-control" id="new-user-pass" type="text" placeholder="e.g. 1234" />
-        </div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" for="new-user-pass">Password</label><input class="form-control" id="new-user-pass" type="text" /></div>
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label" for="new-user-role">Role</label>
-          <select class="form-control" id="new-user-role">
-            <option value="user">User (Record only)</option>
-            <option value="admin">Admin (All rights)</option>
-          </select>
+          <select class="form-control" id="new-user-role"><option value="user">User</option><option value="admin">Admin</option></select>
         </div>
       </div>
       <button class="btn btn-add" style="margin-top:14px" onclick="createUser()">Add User</button>
     </div>
-    
     <div class="section-title">Team Members</div>
     <div id="users-list"></div>
   </div>
@@ -662,130 +426,44 @@
   </nav>
 </div>
 
-<!-- ==================== MODALS ==================== -->
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-pending-lifts"><div class="modal"><div class="modal-handle"></div><div class="modal-title">🚚 Pending Lifts</div><div id="pending-lifts-list"></div><div class="modal-actions"><button class="btn-m-cancel" onclick="closeModal('modal-pending-lifts')">Close</button></div></div></div>
+<div class="modal-overlay" id="modal-del-master"><div class="modal"><div class="modal-handle"></div><div class="modal-title" id="title-del-master">🗑️ Delete</div><p style="font-size:14px;color:var(--text-muted);line-height:1.5" id="msg-del-master"></p><div class="modal-actions"><button class="btn-m-cancel" onclick="closeModal('modal-del-master')">Cancel</button><button class="btn-m-confirm-red" id="confirm-del-master">Delete</button></div></div></div>
+<div class="modal-overlay" id="modal-del-tx"><div class="modal"><div class="modal-handle"></div><div class="modal-title">🗑️ Delete Transaction</div><p style="font-size:14px;color:var(--text-muted);line-height:1.5">Are you sure? Stock balance will be recalculated.</p><div class="modal-actions"><button class="btn-m-cancel" onclick="closeModal('modal-del-tx')">Cancel</button><button class="btn-m-confirm-red" id="confirm-del-tx">Delete</button></div></div></div>
+<div class="modal-overlay" id="modal-edit-tx"><div class="modal"><div class="modal-handle"></div><div class="modal-title">✏️ Edit Transaction</div><div style="margin-bottom:16px"><div class="type-toggle"><button class="type-btn sale active" id="edit-btn-sale" onclick="setEditType('sale')">🛒 Sale</button><button class="type-btn purchase" id="edit-btn-purchase" onclick="setEditType('purchase')">📥 Purchase</button></div></div><div class="form-group"><label class="form-label" for="edit-tx-product">Product</label><select class="form-control" id="edit-tx-product"></select></div><div class="form-group"><label class="form-label" for="edit-tx-qty">Quantity</label><input class="form-control" id="edit-tx-qty" type="number" min="1" /></div><div class="form-group"><label class="form-label" for="edit-tx-party">Party</label><input class="form-control" id="edit-tx-party" type="text" list="party-list" /></div><div class="form-group" id="group-edit-tx-lift-date"><label class="form-label" for="edit-tx-lift-date">Last Lifting Date</label><input class="form-control" id="edit-tx-lift-date" type="date" /></div><div class="form-group"><label class="form-label" for="edit-tx-note">Rate / Note</label><input class="form-control" id="edit-tx-note" type="text" maxlength="150" /></div><div class="modal-actions"><button class="btn-m-cancel" onclick="closeModal('modal-edit-tx')">Cancel</button><button class="btn-m-confirm-blue" onclick="saveEditTx()">Save Changes</button></div></div></div>
 
-<!-- Pending Lifts Modal -->
-<div class="modal-overlay" id="modal-pending-lifts">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">🚚 Pending Lifts</div>
-    <p style="font-size:12px;color:var(--text-muted);line-height:1.4;margin-bottom:16px;">
-      These sales have a Lifting Deadline assigned but have not been marked as physically dispatched. Click the checkmark when the truck leaves.
-    </p>
-    <div id="pending-lifts-list"></div>
-    <div class="modal-actions">
-      <button class="btn-m-cancel" onclick="closeModal('modal-pending-lifts')">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- Delete Product/Party -->
-<div class="modal-overlay" id="modal-del-master">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="title-del-master">🗑️ Delete</div>
-    <p style="font-size:14px;color:var(--text-muted);line-height:1.5" id="msg-del-master"></p>
-    <div class="modal-actions">
-      <button class="btn-m-cancel"      onclick="closeModal('modal-del-master')">Cancel</button>
-      <button class="btn-m-confirm-red" id="confirm-del-master">Delete</button>
-    </div>
-  </div>
-</div>
-
-<!-- Delete Transaction -->
-<div class="modal-overlay" id="modal-del-tx">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">🗑️ Delete Transaction</div>
-    <p style="font-size:14px;color:var(--text-muted);line-height:1.5">Are you sure? Stock balance will be recalculated.</p>
-    <div class="modal-actions">
-      <button class="btn-m-cancel"      onclick="closeModal('modal-del-tx')">Cancel</button>
-      <button class="btn-m-confirm-red" id="confirm-del-tx">Delete</button>
-    </div>
-  </div>
-</div>
-
-<!-- Edit Transaction -->
-<div class="modal-overlay" id="modal-edit-tx">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">✏️ Edit Transaction</div>
-    <div style="margin-bottom:16px">
-      <div class="type-toggle">
-        <button class="type-btn sale active" id="edit-btn-sale"     onclick="setEditType('sale')">🛒 Sale</button>
-        <button class="type-btn purchase"    id="edit-btn-purchase" onclick="setEditType('purchase')">📥 Purchase</button>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="edit-tx-product">Product</label>
-      <select class="form-control" id="edit-tx-product"></select>
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="edit-tx-qty">Quantity</label>
-      <input class="form-control" id="edit-tx-qty" type="number" min="1" />
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="edit-tx-party">Party</label>
-      <input class="form-control" id="edit-tx-party" type="text" list="party-list" />
-    </div>
-    <div class="form-group" id="group-edit-tx-lift-date">
-      <label class="form-label" for="edit-tx-lift-date">Last Lifting Date</label>
-      <input class="form-control" id="edit-tx-lift-date" type="date" />
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="edit-tx-note">Rate / Note</label>
-      <input class="form-control" id="edit-tx-note" type="text" maxlength="150" />
-    </div>
-    <div class="modal-actions">
-      <button class="btn-m-cancel"        onclick="closeModal('modal-edit-tx')">Cancel</button>
-      <button class="btn-m-confirm-blue"  onclick="saveEditTx()">Save Changes</button>
-    </div>
-  </div>
-</div>
-
-<!-- Hidden universal file input -->
 <input type="file" id="app-file-importer" accept=".json,.html,.txt,application/json,text/html,text/plain" style="display:none;" onchange="handleFileImport(event)" />
-
 <div class="toast" id="toast"></div>
 
 <script>
 // ================================================================
-//  STORAGE & STATE INITIALIZATION
+//  FIREBASE CONFIGURATION
 // ================================================================
-const KEY_P = 'st_products';
-const KEY_H = 'st_history';
-const KEY_A = 'st_accounts';
-const KEY_U = 'st_user';
-const KEY_PT = 'st_parties';
+const firebaseConfig = {
+  apiKey: "AIzaSyCUni1UOaNAJX9pfAdFNEDgRfzStpXZKRY",
+  authDomain: "stocktrack-erp.firebaseapp.com",
+  projectId: "stocktrack-erp",
+  storageBucket: "stocktrack-erp.firebasestorage.app",
+  messagingSenderId: "868778348071",
+  appId: "1:868778348071:web:5adcd1573e2e0d3974c802",
+  measurementId: "G-2FJJNPTX5B"
+};
 
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ================================================================
+//  STATE VARIABLES (Synced via Cloud)
+// ================================================================
+let products = [];
+let history  = [];
+let accounts = [];
+let parties  = [];
 let currentUser = null; 
-
-function loadData(key, defaultData) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch(e) {}
-  saveData(key, defaultData);
-  return [...defaultData];
-}
-function saveData(key, data) {
-  try { localStorage.setItem(key, JSON.stringify(data)); } catch(e){}
-}
-
-const DEFAULT_ACCOUNTS = [{"id":"admin_1","name":"LNM SS","pass":"Jaisitaram","role":"admin"}];
-
-let products = loadData(KEY_P, []);
-let history  = loadData(KEY_H, []);
-let accounts = loadData(KEY_A, DEFAULT_ACCOUNTS);
-let parties  = loadData(KEY_PT, []);
 
 let txType   = 'sale';
 let historyFilter = 'all';
 let masterTab = 'products';
-
 let editingProductId = null;
 let editingPartyId = null;
 let editingTxId = null;
@@ -794,10 +472,62 @@ let deletingId = null;
 let deletingType = null;
 
 // ================================================================
+//  CLOUD SYNC & MIGRATION INITIALIZATION
+// ================================================================
+async function initCloudSync() {
+  try {
+    const accSnap = await db.collection('accounts').limit(1).get();
+    
+    // One-Time Migration if Firebase is completely empty
+    if (accSnap.empty) {
+      document.getElementById('cloud-sync-status').textContent = 'First Run: Migrating local data to cloud...';
+      
+      const lAcc = JSON.parse(localStorage.getItem('st_accounts')||'[]');
+      if (lAcc.length === 0) lAcc.push({"id":"admin_1","name":"LNM SS","pass":"Jaisitaram","role":"admin"});
+      for (const a of lAcc) await db.collection('accounts').doc(a.id).set(a);
+      
+      const lProd = JSON.parse(localStorage.getItem('st_products')||'[]');
+      for (const p of lProd) await db.collection('products').doc(p.id).set(p);
+      
+      const lHist = JSON.parse(localStorage.getItem('st_history')||'[]');
+      for (const h of lHist) await db.collection('history').doc(h.id).set(h);
+      
+      const lPart = JSON.parse(localStorage.getItem('st_parties')||'[]');
+      for (const pt of lPart) await db.collection('parties').doc(pt.id).set(pt);
+      
+      showToast("🚀 Local Data Migrated to Firebase!");
+    }
+
+    // Set up Realtime Sync Listeners
+    let isFirstAccountsLoad = true;
+    
+    db.collection('accounts').onSnapshot(snap => { 
+      accounts = snap.docs.map(d => d.data()); 
+      if (currentUser?.role === 'admin') renderUsers();
+      
+      if (isFirstAccountsLoad) {
+        isFirstAccountsLoad = false;
+        // Start all other listeners now that accounts are loaded
+        db.collection('products').onSnapshot(s => { products = s.docs.map(d=>d.data()); renderProductList(); renderRecordForm(); renderDashboard(); });
+        db.collection('parties').onSnapshot(s => { parties = s.docs.map(d=>d.data()); updatePartyDatalist(); renderParties(); });
+        db.collection('history').onSnapshot(s => { history = s.docs.map(d=>d.data()); renderHistory(); renderDashboard(); renderPendingLifts(); });
+        
+        document.getElementById('cloud-sync-overlay').style.display = 'none';
+        if (checkAuthStatus()) showPage('dashboard');
+      }
+    });
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById('cloud-sync-status').textContent = 'Error connecting to cloud. Check console.';
+  }
+}
+
+// ================================================================
 //  LOGIN & AUTH
 // ================================================================
 function checkAuthStatus() {
-  const savedUser = localStorage.getItem(KEY_U);
+  const savedUser = localStorage.getItem('st_user');
   if (savedUser) {
     try {
       currentUser = JSON.parse(savedUser);
@@ -820,18 +550,19 @@ function performLogin() {
   
   if (acc) {
     currentUser = { id: acc.id, name: acc.name, role: acc.role };
-    localStorage.setItem(KEY_U, JSON.stringify(currentUser));
+    localStorage.setItem('st_user', JSON.stringify(currentUser));
     document.getElementById('login-overlay').style.display = 'none';
     showToast(`Welcome back, ${acc.name}!`);
     updateUIForRole();
     renderRecordForm();
+    showPage('dashboard');
   } else {
     showToast('⚠️ Invalid Name or Password');
   }
 }
 
 function performLogout() {
-  localStorage.removeItem(KEY_U);
+  localStorage.removeItem('st_user');
   currentUser = null;
   document.getElementById('login-name').value = '';
   document.getElementById('login-pass').value = '';
@@ -848,16 +579,44 @@ function updateUIForRole() {
   const userNav = document.getElementById('nav-users');
   if (currentUser.role === 'admin') {
     userNav.style.display = 'flex';
+    renderUsers();
   } else {
     userNav.style.display = 'none';
     if (document.getElementById('page-users').classList.contains('active')) showPage('dashboard');
   }
   
-  renderHistory();
-  renderProductList();
-  renderParties();
-  renderRecordForm();
-  if (currentUser.role === 'admin') renderUsers();
+  renderHistory(); renderProductList(); renderParties(); renderRecordForm();
+}
+
+function createUser() {
+  if (currentUser?.role !== 'admin') return showToast('⚠️ Admins only.');
+  const name = document.getElementById('new-user-name').value.trim();
+  const pass = document.getElementById('new-user-pass').value.trim();
+  const role = document.getElementById('new-user-role').value;
+  if (!name || !pass) return showToast('⚠️ Enter name and password.');
+  if (accounts.some(a => a.name.toLowerCase() === name.toLowerCase())) return showToast('⚠️ User exists.');
+  
+  const newId = 'usr_' + Date.now().toString();
+  db.collection('accounts').doc(newId).set({ id: newId, name, pass, role });
+  document.getElementById('new-user-name').value = '';
+  document.getElementById('new-user-pass').value = '';
+  showToast('✅ User created & Synced to Cloud!');
+}
+
+function renderUsers() {
+  const list = document.getElementById('users-list');
+  list.innerHTML = accounts.map(a => `
+    <div class="master-item">
+      <div class="master-info">
+        <div class="master-name">${escHtml(a.name)} <span class="role-badge ${a.role}">${a.role}</span></div>
+        <div class="master-detail" style="font-family:monospace">Password: ${escHtml(a.pass)}</div>
+      </div>
+      ${a.id !== currentUser.id ? `<button class="icon-btn del" onclick="deleteUser('${a.id}')">🗑️</button>` : ''}
+    </div>
+  `).join('');
+}
+function deleteUser(id) {
+  if (confirm('Delete user?')) { db.collection('accounts').doc(id).delete(); showToast('🗑️ User deleted.'); }
 }
 
 // ================================================================
@@ -866,17 +625,10 @@ function updateUIForRole() {
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  
   const targetPage = document.getElementById('page-' + name);
   const targetNav  = document.getElementById('nav-'  + name);
   if (targetPage) targetPage.classList.add('active');
   if (targetNav)  targetNav.classList.add('active');
-  
-  if (name === 'dashboard') renderDashboard();
-  if (name === 'record')    renderRecordForm();
-  if (name === 'history')   renderHistory();
-  if (name === 'master')    { renderProductList(); renderParties(); }
-  if (name === 'users' && currentUser?.role === 'admin') renderUsers();
 }
 
 function setMasterTab(tab) {
@@ -885,7 +637,6 @@ function setMasterTab(tab) {
   document.getElementById('btn-tab-products').style.color       = tab === 'products' ? 'var(--gold)' : 'var(--text)';
   document.getElementById('btn-tab-parties').style.borderColor  = tab === 'parties' ? 'var(--gold)' : 'var(--border)';
   document.getElementById('btn-tab-parties').style.color        = tab === 'parties' ? 'var(--gold)' : 'var(--text)';
-  
   document.getElementById('master-sec-products').style.display = tab === 'products' ? 'block' : 'none';
   document.getElementById('master-sec-parties').style.display  = tab === 'parties' ? 'block' : 'none';
 }
@@ -903,33 +654,19 @@ function computeBalance(p) {
 function renderStockItem(p) {
   const bal    = computeBalance(p);
   let status   = bal < 0 ? 'critical' : bal === 0 ? 'low' : bal <= p.threshold ? 'low' : 'good';
-  
   let deadlineHtml = '';
   if (p.liftingBy) {
     const today = new Date().toISOString().split('T')[0];
     if (p.liftingBy < today && bal > 0) {
-      status = 'critical'; // Force red if past deadline and still in stock
-      deadlineHtml = `<span style="color:var(--red); font-weight:700;">(Overdue: ${p.liftingBy})</span>`;
+      status = 'critical'; deadlineHtml = `<span style="color:var(--red); font-weight:700;">(Overdue: ${p.liftingBy})</span>`;
     } else {
       deadlineHtml = `<span style="color:var(--text-muted);">(Clear by: ${p.liftingBy})</span>`;
     }
   }
-
-  const unit   = p.unit || 'units';
-  const last   = [...history].reverse().find(t => t.productId === p.id);
-  const meta   = last ? `Last: ${last.type==='sale'?'−':'+'}${last.qty} ${unit} by ${escHtml(last.user)}` : 'No transactions yet';
-  
-  return `<div class="stock-item ${status}">
-    <div class="stock-dot ${status}"></div>
-    <div class="stock-info">
-      <div class="stock-name">${escHtml(p.name)} ${deadlineHtml}</div>
-      <div class="stock-meta">${meta}</div>
-    </div>
-    <div class="stock-balance">
-      <div class="qty bal-${status}">${bal}</div>
-      <div class="unit">${unit}</div>
-    </div>
-  </div>`;
+  const unit = p.unit || 'units';
+  const last = [...history].sort((a,b)=>new Date(b.ts)-new Date(a.ts)).find(t => t.productId === p.id);
+  const meta = last ? `Last: ${last.type==='sale'?'−':'+'}${last.qty} ${unit} by ${escHtml(last.user)}` : 'No transactions yet';
+  return `<div class="stock-item ${status}"><div class="stock-dot ${status}"></div><div class="stock-info"><div class="stock-name">${escHtml(p.name)} ${deadlineHtml}</div><div class="stock-meta">${meta}</div></div><div class="stock-balance"><div class="qty bal-${status}">${bal}</div><div class="unit">${unit}</div></div></div>`;
 }
 
 function renderDashboard() {
@@ -945,22 +682,13 @@ function renderDashboard() {
   document.getElementById('stat-pending-lifts').textContent = pendingLifts;
 
   const listContainer = document.getElementById('stock-list');
-  if (!products.length) {
-    listContainer.innerHTML = `<div class="empty-state"><div class="emoji">📋</div><p>No products yet.</p></div>`;
-    return;
-  }
+  if (!products.length) { listContainer.innerHTML = `<div class="empty-state"><div class="emoji">📋</div><p>No products yet.</p></div>`; return; }
 
   const activeProducts = [], zeroProducts = [];
   products.forEach(p => computeBalance(p) === 0 ? zeroProducts.push(p) : activeProducts.push(p));
-
   let html = activeProducts.map(renderStockItem).join('');
   if (zeroProducts.length > 0) {
-    html += `
-      <div class="zero-balance-header" onclick="document.getElementById('zero-stock-list').style.display = document.getElementById('zero-stock-list').style.display === 'none' ? 'block' : 'none';">
-        Zero Balance Stock Items (${zeroProducts.length}) <span>▼</span>
-      </div>
-      <div id="zero-stock-list" style="display:none;">${zeroProducts.map(renderStockItem).join('')}</div>
-    `;
+    html += `<div class="zero-balance-header" onclick="document.getElementById('zero-stock-list').style.display = document.getElementById('zero-stock-list').style.display === 'none' ? 'block' : 'none';">Zero Balance Stock Items (${zeroProducts.length}) <span>▼</span></div><div id="zero-stock-list" style="display:none;">${zeroProducts.map(renderStockItem).join('')}</div>`;
   }
   listContainer.innerHTML = html;
 }
@@ -968,49 +696,21 @@ function renderDashboard() {
 // ================================================================
 //  PENDING LIFTS MODAL
 // ================================================================
-function openPendingLiftsModal() {
-  renderPendingLifts();
-  openModal('modal-pending-lifts');
-}
-
+function openPendingLiftsModal() { renderPendingLifts(); openModal('modal-pending-lifts'); }
 function renderPendingLifts() {
   const pending = history.filter(t => t.type === 'sale' && t.liftingDeadline && !t.isLifted);
   const list = document.getElementById('pending-lifts-list');
-  if (!pending.length) {
-    list.innerHTML = `<div class="empty-state" style="padding:20px 0;"><p>All clear! No pending lifts.</p></div>`;
-    return;
-  }
-  
+  if (!pending.length) { list.innerHTML = `<div class="empty-state" style="padding:20px 0;"><p>All clear! No pending lifts.</p></div>`; return; }
   list.innerHTML = pending.map(t => {
     const unit = (products.find(p => p.id === t.productId) || {}).unit || 'units';
     const isOverdue = t.liftingDeadline < new Date().toISOString().split('T')[0];
     const dateColor = isOverdue ? 'var(--red)' : 'var(--amber)';
-    return `
-      <div class="master-item">
-        <div class="master-info">
-          <div class="master-name">${escHtml(t.productName)} <span style="font-size:12px;color:var(--text-muted);font-weight:400">(${t.qty} ${unit})</span></div>
-          <div class="master-detail">Party: <strong style="color:var(--text)">${escHtml(t.party || 'N/A')}</strong></div>
-          <div class="master-detail" style="color:${dateColor}">Deadline: ${t.liftingDeadline}</div>
-        </div>
-        <div class="master-actions">
-          <button class="icon-btn check" onclick="markLifted('${t.id}')" title="Mark Lifted">✔️</button>
-        </div>
-      </div>
-    `;
+    return `<div class="master-item"><div class="master-info"><div class="master-name">${escHtml(t.productName)} <span style="font-size:12px;color:var(--text-muted);font-weight:400">(${t.qty} ${unit})</span></div><div class="master-detail">Party: <strong style="color:var(--text)">${escHtml(t.party || 'N/A')}</strong></div><div class="master-detail" style="color:${dateColor}">Deadline: ${t.liftingDeadline}</div></div><div class="master-actions"><button class="icon-btn check" onclick="markLifted('${t.id}')" title="Mark Lifted">✔️</button></div></div>`;
   }).join('');
 }
-
 function markLifted(id) {
-  const tx = history.find(t => t.id === id);
-  if (tx) {
-    tx.isLifted = true;
-    tx.liftedAt = new Date().toISOString();
-    saveData(KEY_H, history);
-    renderPendingLifts();
-    renderDashboard();
-    renderHistory();
-    showToast('🚚 Marked as Lifted!');
-  }
+  db.collection('history').doc(id).update({ isLifted: true, liftedAt: new Date().toISOString() });
+  showToast('🚚 Synced: Marked as Lifted!');
 }
 
 // ================================================================
@@ -1020,11 +720,8 @@ function setType(type) {
   txType = type;
   document.getElementById('btn-type-sale').classList.toggle('active', type === 'sale');
   document.getElementById('btn-type-purchase').classList.toggle('active', type === 'purchase');
-  
-  const btn = document.getElementById('submit-btn');
-  btn.textContent = type === 'sale' ? 'Record Sale' : 'Record Purchase';
-  btn.className   = 'btn btn-' + type;
-  
+  document.getElementById('submit-btn').textContent = type === 'sale' ? 'Record Sale' : 'Record Purchase';
+  document.getElementById('submit-btn').className   = 'btn btn-' + type;
   document.getElementById('lbl-rec-party').textContent = type === 'sale' ? 'Sale To' : 'Purchase From';
   document.getElementById('group-rec-lift-date').style.display = type === 'sale' ? 'block' : 'none';
 }
@@ -1039,12 +736,8 @@ function updatePartyDatalist() {
 
 function renderRecordForm() {
   const sel = document.getElementById('rec-product');
-  sel.innerHTML = products.length
-    ? products.map(p => `<option value="${p.id}">${escHtml(p.name)} (${computeBalance(p)} ${p.unit||'units'})</option>`).join('')
-    : '<option disabled selected>— Add products first —</option>';
-  
-  updatePartyDatalist();
-  setType(txType);
+  sel.innerHTML = products.length ? products.map(p => `<option value="${p.id}">${escHtml(p.name)} (${computeBalance(p)} ${p.unit||'units'})</option>`).join('') : '<option disabled selected>— Add products first —</option>';
+  updatePartyDatalist(); setType(txType);
 }
 
 function recordTransaction() {
@@ -1059,41 +752,30 @@ function recordTransaction() {
   if (!qty || qty < 1) return showToast('⚠️ Enter a valid quantity.');
 
   const product = products.find(p => p.id === productId);
-  if (txType === 'sale' && qty > computeBalance(product)) {
-    return showToast(`⚠️ Only ${computeBalance(product)} ${product.unit||'units'} available!`);
-  }
+  if (txType === 'sale' && qty > computeBalance(product)) return showToast(`⚠️ Only ${computeBalance(product)} ${product.unit||'units'} available!`);
 
   if (party) {
     const partyExists = parties.some(p => p.name.toLowerCase() === party.toLowerCase());
     if (!partyExists) {
-      parties.push({ id: Date.now().toString(), name: party, nick: '', city: '', mobile: '' });
-      saveData(KEY_PT, parties);
-      updatePartyDatalist();
-      renderParties();
+      const newPt = { id: 'pt_' + Date.now().toString(), name: party, nick: '', city: '', mobile: '' };
+      db.collection('parties').doc(newPt.id).set(newPt);
     }
   }
 
-  history.push({
-    id: Date.now().toString(),
-    type: txType,
-    productId,
-    productName: product.name,
-    qty,
-    party,
-    note,
-    user,
+  const txId = Date.now().toString();
+  db.collection('history').doc(txId).set({
+    id: txId, type: txType, productId, productName: product.name,
+    qty, party, note, user,
     liftingDeadline: (txType === 'sale' && liftDate) ? liftDate : null,
-    isLifted: (txType === 'sale' && liftDate) ? false : true, // If no deadline, assumed physically cleared
+    isLifted: (txType === 'sale' && liftDate) ? false : true,
     ts: new Date().toISOString()
   });
 
-  saveData(KEY_H, history);
   document.getElementById('rec-qty').value = '';
   document.getElementById('rec-note').value = '';
   document.getElementById('rec-party').value = '';
   document.getElementById('rec-lift-date').value = '';
-  showToast(txType === 'sale' ? '🛒 Sale recorded!' : '📥 Purchase recorded!');
-  renderRecordForm();
+  showToast(txType === 'sale' ? '🛒 Sale Synced!' : '📥 Purchase Synced!');
 }
 
 // ================================================================
@@ -1105,328 +787,152 @@ function setFilter(filter) {
   document.getElementById('chip-filter-' + filter).classList.add('active');
   renderHistory();
 }
-
 function setHistoryRange(days) {
-  const fromEl = document.getElementById('hist-from');
-  const toEl = document.getElementById('hist-to');
-  if (days === null) {
-    fromEl.value = ''; toEl.value = '';
-  } else {
-    const today = new Date();
-    toEl.value = today.toISOString().split('T')[0];
-    const from = new Date(today.getTime() - (days * 24 * 60 * 60 * 1000));
-    fromEl.value = from.toISOString().split('T')[0];
-  }
+  const fromEl = document.getElementById('hist-from'), toEl = document.getElementById('hist-to');
+  if (days === null) { fromEl.value = ''; toEl.value = ''; }
+  else { const today = new Date(); toEl.value = today.toISOString().split('T')[0]; const from = new Date(today.getTime() - (days * 24 * 60 * 60 * 1000)); fromEl.value = from.toISOString().split('T')[0]; }
   renderHistory();
 }
-
 function getFilteredHistory() {
-  let txs = [...history].reverse();
+  let txs = [...history].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
   if (historyFilter !== 'all') txs = txs.filter(t => t.type === historyFilter);
-  
   const fromD = document.getElementById('hist-from').value;
   const toD   = document.getElementById('hist-to').value;
   const limit = document.getElementById('hist-limit').value;
-
   if (fromD) txs = txs.filter(t => t.ts >= fromD);
   if (toD)   txs = txs.filter(t => t.ts <= toD + 'T23:59:59');
   if (limit !== 'all') txs = txs.slice(0, parseInt(limit));
-  
   return txs;
 }
 
 function renderHistory() {
   const txs = getFilteredHistory();
   const list = document.getElementById('history-list');
-  if (!txs.length) {
-    list.innerHTML = `<div class="empty-state"><div class="emoji">🕒</div><p>No transactions found.</p></div>`;
-    return;
-  }
-  
+  if (!txs.length) { list.innerHTML = `<div class="empty-state"><div class="emoji">🕒</div><p>No transactions found.</p></div>`; return; }
   list.innerHTML = txs.map(t => {
-    const d    = new Date(t.ts);
-    const ds   = d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
-    const ts   = d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
-    const emoji= t.type === 'sale' ? '🛒' : '📥';
+    const d = new Date(t.ts);
+    const ds = d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+    const ts = d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
     const unit = (products.find(p => p.id === t.productId) || {unit:''}).unit || 'units';
-    
     let actionHtml = '';
     if (currentUser && currentUser.role === 'admin') {
-      actionHtml = `
-        <div class="tx-actions">
-          <button class="icon-btn edit" onclick="openEditTx('${t.id}')"   title="Edit">✏️</button>
-          <button class="icon-btn del"  onclick="openDeleteTx('${t.id}')" title="Delete">🗑️</button>
-        </div>
-      `;
+      actionHtml = `<div class="tx-actions"><button class="icon-btn edit" onclick="openEditTx('${t.id}')">✏️</button><button class="icon-btn del" onclick="openDeleteTx('${t.id}')">🗑️</button></div>`;
     }
-    
-    let partyHtml = t.party ? ` · Party: ${escHtml(t.party)}` : '';
     let liftHtml = '';
     if (t.type === 'sale' && t.liftingDeadline) {
       if (t.isLifted) liftHtml = ` <span style="color:var(--green)">[Lifted: ${t.liftedAt.split('T')[0]}]</span>`;
       else liftHtml = ` <span style="color:var(--red)">[Pending Lift: ${t.liftingDeadline}]</span>`;
     }
-
-    return `<div class="tx-item">
-      <div class="tx-badge ${t.type}">${emoji}</div>
-      <div class="tx-info">
-        <div class="tx-product">${escHtml(t.productName)}</div>
-        <div class="tx-meta">${ds} ${ts} · by ${escHtml(t.user)}${partyHtml}</div>
-        <div class="tx-meta">${t.note ? 'Note: ' + escHtml(t.note) : ''}${liftHtml}</div>
-      </div>
-      <div class="tx-right">
-        <div class="tx-amount ${t.type}"><div class="qty">${t.qty}</div><div class="unit">${unit}</div></div>
-        ${actionHtml}
-      </div>
-    </div>`;
+    return `<div class="tx-item"><div class="tx-badge ${t.type}">${t.type === 'sale' ? '🛒' : '📥'}</div><div class="tx-info"><div class="tx-product">${escHtml(t.productName)}</div><div class="tx-meta">${ds} ${ts} · by ${escHtml(t.user)}${t.party ? ' · Party: '+escHtml(t.party) : ''}</div><div class="tx-meta">${t.note ? 'Note: ' + escHtml(t.note) : ''}${liftHtml}</div></div><div class="tx-right"><div class="tx-amount ${t.type}"><div class="qty">${t.qty}</div><div class="unit">${unit}</div></div>${actionHtml}</div></div>`;
   }).join('');
 }
 
-// Transaction Edit/Delete Logic
-function openDeleteTx(id) {
-  deletingTxId = id;
-  openModal('modal-del-tx');
-  document.getElementById('confirm-del-tx').onclick = () => {
-    history = history.filter(t => t.id !== deletingTxId);
-    saveData(KEY_H, history);
-    closeModal('modal-del-tx'); showToast('🗑️ Transaction deleted.');
-    renderHistory(); renderDashboard();
-  };
-}
-
+function openDeleteTx(id) { deletingTxId = id; openModal('modal-del-tx'); document.getElementById('confirm-del-tx').onclick = () => { db.collection('history').doc(deletingTxId).delete(); closeModal('modal-del-tx'); showToast('🗑️ Deleted from Cloud.'); }; }
 function openEditTx(id) {
-  const tx = history.find(t => t.id === id);
-  if (!tx) return;
+  const tx = history.find(t => t.id === id); if (!tx) return;
   editingTxId = id; editTxType = tx.type;
-  
-  const sel = document.getElementById('edit-tx-product');
-  sel.innerHTML = products.map(p => `<option value="${p.id}" ${p.id===tx.productId?'selected':''}>${escHtml(p.name)}</option>`).join('');
-  
-  document.getElementById('edit-tx-qty').value  = tx.qty;
-  document.getElementById('edit-tx-party').value = tx.party || '';
-  document.getElementById('edit-tx-lift-date').value = tx.liftingDeadline || '';
-  document.getElementById('edit-tx-note').value = tx.note || '';
-  
-  setEditType(tx.type);
-  openModal('modal-edit-tx');
+  document.getElementById('edit-tx-product').innerHTML = products.map(p => `<option value="${p.id}" ${p.id===tx.productId?'selected':''}>${escHtml(p.name)}</option>`).join('');
+  document.getElementById('edit-tx-qty').value  = tx.qty; document.getElementById('edit-tx-party').value = tx.party || ''; document.getElementById('edit-tx-lift-date').value = tx.liftingDeadline || ''; document.getElementById('edit-tx-note').value = tx.note || '';
+  setEditType(tx.type); openModal('modal-edit-tx');
 }
-
 function setEditType(type) {
   editTxType = type;
-  document.getElementById('edit-btn-sale').classList.toggle('active', type === 'sale');
-  document.getElementById('edit-btn-purchase').classList.toggle('active', type === 'purchase');
+  document.getElementById('edit-btn-sale').classList.toggle('active', type === 'sale'); document.getElementById('edit-btn-purchase').classList.toggle('active', type === 'purchase');
   document.getElementById('group-edit-tx-lift-date').style.display = type === 'sale' ? 'block' : 'none';
 }
-
 function saveEditTx() {
-  const qty       = parseInt(document.getElementById('edit-tx-qty').value);
-  const party     = document.getElementById('edit-tx-party').value.trim();
-  const liftDate  = document.getElementById('edit-tx-lift-date').value;
-  const note      = document.getElementById('edit-tx-note').value.trim();
+  const qty = parseInt(document.getElementById('edit-tx-qty').value);
+  const party = document.getElementById('edit-tx-party').value.trim();
+  const liftDate = document.getElementById('edit-tx-lift-date').value;
+  const note = document.getElementById('edit-tx-note').value.trim();
   const productId = document.getElementById('edit-tx-product').value;
   if (!qty || qty < 1) return showToast('⚠️ Enter a valid quantity.');
 
   const product = products.find(p => p.id === productId);
-  const idx = history.findIndex(t => t.id === editingTxId);
-  if (idx === -1) return;
+  const tx = history.find(t => t.id === editingTxId); if(!tx) return;
   
-  history[idx] = {
-    ...history[idx], type: editTxType, productId,
-    productName: product ? product.name : history[idx].productName,
-    qty, party, note,
-    liftingDeadline: (editTxType === 'sale' && liftDate) ? liftDate : null,
-    editedAt: new Date().toISOString()
-  };
-  // If editing removed the deadline, assume lifted. If deadline added/changed, pending.
-  if (editTxType === 'sale' && liftDate && !history[idx].liftedAt) history[idx].isLifted = false;
-  else if (!liftDate) history[idx].isLifted = true;
-
-  saveData(KEY_H, history); closeModal('modal-edit-tx');
-  showToast('✅ Transaction updated!'); renderHistory(); renderDashboard();
+  const updates = { type: editTxType, productId, productName: product.name, qty, party, note, liftingDeadline: (editTxType === 'sale' && liftDate) ? liftDate : null, editedAt: new Date().toISOString() };
+  if (editTxType === 'sale' && liftDate && !tx.liftedAt) updates.isLifted = false; else if (!liftDate) updates.isLifted = true;
+  
+  db.collection('history').doc(editingTxId).set(updates, {merge:true});
+  closeModal('modal-edit-tx'); showToast('✅ Cloud Sync: Transaction updated!');
 }
 
 // ================================================================
-//  MASTER DATA (Products)
+//  MASTER DATA
 // ================================================================
 function saveProduct() {
-  const name      = document.getElementById('p-name').value.trim();
-  const opening   = parseInt(document.getElementById('p-opening').value) || 0;
-  const threshold = parseInt(document.getElementById('p-threshold').value) || 10;
-  const unit      = document.getElementById('p-unit').value.trim();
-  const liftingBy = document.getElementById('p-lift-by').value;
+  const name = document.getElementById('p-name').value.trim(), opening = parseInt(document.getElementById('p-opening').value) || 0, threshold = parseInt(document.getElementById('p-threshold').value) || 10, unit = document.getElementById('p-unit').value.trim(), liftingBy = document.getElementById('p-lift-by').value;
   if (!name) return showToast('⚠️ Product name is required.');
 
   if (editingProductId) {
     if (currentUser?.role !== 'admin') return showToast('⚠️ Admin rights required.');
-    const idx = products.findIndex(p => p.id === editingProductId);
-    if (idx === -1) return;
-    if (products[idx].name !== name) {
-      history.forEach(t => { if (t.productId === editingProductId) t.productName = name; });
-      saveData(KEY_H, history);
-    }
-    products[idx] = { ...products[idx], name, opening, threshold, unit, liftingBy };
-    saveData(KEY_P, products); cancelProductEdit(); showToast('✅ Product updated!');
+    db.collection('products').doc(editingProductId).update({ name, opening, threshold, unit, liftingBy });
+    cancelProductEdit(); showToast('✅ Synced update to Cloud!');
   } else {
-    if (products.find(p => p.name.toLowerCase() === name.toLowerCase())) return showToast('⚠️ Product already exists.');
-    products.push({ id: Date.now().toString(), name, opening, threshold, unit, liftingBy });
-    saveData(KEY_P, products); clearProductForm(); showToast('✅ Product added!');
+    if (products.find(p => p.name.toLowerCase() === name.toLowerCase())) return showToast('⚠️ Product exists.');
+    const newId = Date.now().toString();
+    db.collection('products').doc(newId).set({ id: newId, name, opening, threshold, unit, liftingBy });
+    clearProductForm(); showToast('✅ Product added to Cloud!');
   }
-  renderProductList();
 }
-
 function editProduct(id) {
   if (currentUser?.role !== 'admin') return showToast('⚠️ Admin required.');
   const p = products.find(p => p.id === id); if (!p) return;
-  editingProductId = id;
-  document.getElementById('p-name').value      = p.name;
-  document.getElementById('p-opening').value   = p.opening;
-  document.getElementById('p-threshold').value = p.threshold;
-  document.getElementById('p-unit').value      = p.unit || '';
-  document.getElementById('p-lift-by').value   = p.liftingBy || '';
-  document.getElementById('product-form-title').textContent = '✏️ Edit Product';
-  document.getElementById('btn-save-product').textContent   = 'Update Product';
-  document.getElementById('btn-cancel-product-edit').style.display = '';
-  document.getElementById('product-form-card').classList.add('editing');
-  document.getElementById('product-form-card').scrollIntoView({behavior:'smooth', block:'start'});
+  editingProductId = id; document.getElementById('p-name').value = p.name; document.getElementById('p-opening').value = p.opening; document.getElementById('p-threshold').value = p.threshold; document.getElementById('p-unit').value = p.unit || ''; document.getElementById('p-lift-by').value = p.liftingBy || '';
+  document.getElementById('product-form-title').textContent = '✏️ Edit Product'; document.getElementById('btn-save-product').textContent = 'Update Product'; document.getElementById('btn-cancel-product-edit').style.display = ''; document.getElementById('product-form-card').classList.add('editing'); document.getElementById('product-form-card').scrollIntoView({behavior:'smooth', block:'start'});
 }
-
-function cancelProductEdit() {
-  editingProductId = null; clearProductForm();
-  document.getElementById('product-form-title').textContent = '➕ Add New Product';
-  document.getElementById('btn-save-product').textContent   = 'Add Product';
-  document.getElementById('btn-cancel-product-edit').style.display = 'none';
-  document.getElementById('product-form-card').classList.remove('editing');
-}
-
-function clearProductForm() {
-  ['p-name', 'p-opening', 'p-threshold', 'p-unit', 'p-lift-by'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = '';
-  });
-}
+function cancelProductEdit() { editingProductId = null; clearProductForm(); document.getElementById('product-form-title').textContent = '➕ Add New Product'; document.getElementById('btn-save-product').textContent = 'Add Product'; document.getElementById('btn-cancel-product-edit').style.display = 'none'; document.getElementById('product-form-card').classList.remove('editing'); }
+function clearProductForm() { ['p-name', 'p-opening', 'p-threshold', 'p-unit', 'p-lift-by'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); }
 
 function renderProductList() {
   const list = document.getElementById('product-list');
   if (!products.length) { list.innerHTML = `<div class="empty-state"><div class="emoji">📭</div><p>No products added yet.</p></div>`; return; }
-  
   list.innerHTML = products.map(p => {
-    const bal = computeBalance(p);
-    let actionHtml = '';
-    if (currentUser?.role === 'admin') {
-      actionHtml = `<div class="master-actions">
-        <button class="icon-btn edit" onclick="editProduct('${p.id}')">✏️</button>
-        <button class="icon-btn del"  onclick="openDelete('product', '${p.id}')">🗑️</button>
-      </div>`;
-    }
-    const liftStr = p.liftingBy ? ` · Clear By: <strong style="color:var(--text)">${p.liftingBy}</strong>` : '';
-    return `<div class="master-item">
-      <div class="master-info">
-        <div class="master-name">${escHtml(p.name)}</div>
-        <div class="master-detail">Opening: ${p.opening} · Alert at: ${p.threshold} · Unit: ${p.unit||'—'}${liftStr}</div>
-        <div class="master-detail" style="color:var(--gold);margin-top:4px;font-weight:600">Current Balance: ${bal} ${p.unit||'units'}</div>
-      </div>${actionHtml}
-    </div>`;
+    let actionHtml = currentUser?.role === 'admin' ? `<div class="master-actions"><button class="icon-btn edit" onclick="editProduct('${p.id}')">✏️</button><button class="icon-btn del" onclick="openDelete('product', '${p.id}')">🗑️</button></div>` : '';
+    return `<div class="master-item"><div class="master-info"><div class="master-name">${escHtml(p.name)}</div><div class="master-detail">Opening: ${p.opening} · Alert at: ${p.threshold} · Unit: ${p.unit||'—'}${p.liftingBy ? ` · Clear By: <strong style="color:var(--text)">${p.liftingBy}</strong>` : ''}</div><div class="master-detail" style="color:var(--gold);margin-top:4px;font-weight:600">Current Balance: ${computeBalance(p)} ${p.unit||'units'}</div></div>${actionHtml}</div>`;
   }).join('');
 }
 
-// ================================================================
-//  MASTER DATA (Parties)
-// ================================================================
 function saveParty() {
-  const name   = document.getElementById('pt-name').value.trim();
-  const nick   = document.getElementById('pt-nick').value.trim();
-  const city   = document.getElementById('pt-city').value.trim();
-  const mobile = document.getElementById('pt-mobile').value.trim();
+  const name = document.getElementById('pt-name').value.trim(), nick = document.getElementById('pt-nick').value.trim(), city = document.getElementById('pt-city').value.trim(), mobile = document.getElementById('pt-mobile').value.trim();
   if (!name || !city) return showToast('⚠️ Party Name and City are required.');
-
   if (editingPartyId) {
     if (currentUser?.role !== 'admin') return showToast('⚠️ Admin rights required.');
-    const idx = parties.findIndex(p => p.id === editingPartyId);
-    if (idx === -1) return;
-    parties[idx] = { ...parties[idx], name, nick, city, mobile };
-    saveData(KEY_PT, parties); cancelPartyEdit(); showToast('✅ Party updated!');
+    db.collection('parties').doc(editingPartyId).update({ name, nick, city, mobile });
+    cancelPartyEdit(); showToast('✅ Party updated on Cloud!');
   } else {
-    parties.push({ id: Date.now().toString(), name, nick, city, mobile });
-    saveData(KEY_PT, parties); clearPartyForm(); showToast('✅ Party added!');
+    const newId = 'pt_'+Date.now().toString();
+    db.collection('parties').doc(newId).set({ id: newId, name, nick, city, mobile });
+    clearPartyForm(); showToast('✅ Party added to Cloud!');
   }
-  updatePartyDatalist();
-  renderParties();
 }
-
 function editParty(id) {
   if (currentUser?.role !== 'admin') return showToast('⚠️ Admin required.');
   const p = parties.find(p => p.id === id); if (!p) return;
-  editingPartyId = id;
-  document.getElementById('pt-name').value   = p.name;
-  document.getElementById('pt-nick').value   = p.nick || '';
-  document.getElementById('pt-city').value   = p.city;
-  document.getElementById('pt-mobile').value = p.mobile || '';
-  document.getElementById('party-form-title').textContent = '✏️ Edit Party';
-  document.getElementById('btn-save-party').textContent   = 'Update Party';
-  document.getElementById('btn-cancel-party-edit').style.display = '';
-  document.getElementById('party-form-card').classList.add('editing');
-  document.getElementById('party-form-card').scrollIntoView({behavior:'smooth', block:'start'});
+  editingPartyId = id; document.getElementById('pt-name').value = p.name; document.getElementById('pt-nick').value = p.nick || ''; document.getElementById('pt-city').value = p.city; document.getElementById('pt-mobile').value = p.mobile || '';
+  document.getElementById('party-form-title').textContent = '✏️ Edit Party'; document.getElementById('btn-save-party').textContent = 'Update Party'; document.getElementById('btn-cancel-party-edit').style.display = ''; document.getElementById('party-form-card').classList.add('editing'); document.getElementById('party-form-card').scrollIntoView({behavior:'smooth', block:'start'});
 }
-
-function cancelPartyEdit() {
-  editingPartyId = null; clearPartyForm();
-  document.getElementById('party-form-title').textContent = '➕ Add New Party';
-  document.getElementById('btn-save-party').textContent   = 'Add Party';
-  document.getElementById('btn-cancel-party-edit').style.display = 'none';
-  document.getElementById('party-form-card').classList.remove('editing');
-}
-
-function clearPartyForm() {
-  ['pt-name', 'pt-nick', 'pt-city', 'pt-mobile'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = '';
-  });
-}
+function cancelPartyEdit() { editingPartyId = null; clearPartyForm(); document.getElementById('party-form-title').textContent = '➕ Add New Party'; document.getElementById('btn-save-party').textContent = 'Add Party'; document.getElementById('btn-cancel-party-edit').style.display = 'none'; document.getElementById('party-form-card').classList.remove('editing'); }
+function clearPartyForm() { ['pt-name', 'pt-nick', 'pt-city', 'pt-mobile'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); }
 
 function renderParties() {
   const list = document.getElementById('party-list-display');
   if (!parties.length) { list.innerHTML = `<div class="empty-state"><div class="emoji">🏢</div><p>No parties added yet.</p></div>`; return; }
-  
-  list.innerHTML = parties.map(p => {
-    let actionHtml = '';
-    if (currentUser?.role === 'admin') {
-      actionHtml = `<div class="master-actions">
-        <button class="icon-btn edit" onclick="editParty('${p.id}')">✏️</button>
-        <button class="icon-btn del"  onclick="openDelete('party', '${p.id}')">🗑️</button>
-      </div>`;
-    }
-    const nickStr = p.nick ? ` (${escHtml(p.nick)})` : '';
-    const mobStr  = p.mobile ? ` · 📞 ${escHtml(p.mobile)}` : '';
-    return `<div class="master-item">
-      <div class="master-info">
-        <div class="master-name">${escHtml(p.name)}${nickStr}</div>
-        <div class="master-detail">🏙️ ${escHtml(p.city)}${mobStr}</div>
-      </div>${actionHtml}
-    </div>`;
-  }).join('');
+  list.innerHTML = parties.map(p => `<div class="master-item"><div class="master-info"><div class="master-name">${escHtml(p.name)}${p.nick?` (${escHtml(p.nick)})`:''}</div><div class="master-detail">🏙️ ${escHtml(p.city)}${p.mobile?` · 📞 ${escHtml(p.mobile)}`:''}</div></div>${currentUser?.role === 'admin' ? `<div class="master-actions"><button class="icon-btn edit" onclick="editParty('${p.id}')">✏️</button><button class="icon-btn del" onclick="openDelete('party', '${p.id}')">🗑️</button></div>` : ''}</div>`).join('');
 }
 
-// Master Delete Handler
 function openDelete(type, id) {
   if (currentUser?.role !== 'admin') return showToast('⚠️ Admin rights required.');
   deletingType = type; deletingId = id;
   const item = type === 'product' ? products.find(p=>p.id===id) : parties.find(p=>p.id===id);
-  document.getElementById('msg-del-master').textContent = `Delete "${item ? item.name : ''}"?`;
-  openModal('modal-del-master');
+  document.getElementById('msg-del-master').textContent = `Delete "${item ? item.name : ''}"?`; openModal('modal-del-master');
   document.getElementById('confirm-del-master').onclick = () => {
-    if (deletingType === 'product') {
-      products = products.filter(p => p.id !== deletingId);
-      saveData(KEY_P, products);
-      if (editingProductId === deletingId) cancelProductEdit();
-      renderProductList();
-    } else {
-      parties = parties.filter(p => p.id !== deletingId);
-      saveData(KEY_PT, parties);
-      if (editingPartyId === deletingId) cancelPartyEdit();
-      updatePartyDatalist(); renderParties();
-    }
-    closeModal('modal-del-master'); showToast(`🗑️ ${deletingType} deleted.`);
+    if (deletingType === 'product') { db.collection('products').doc(deletingId).delete(); if (editingProductId === deletingId) cancelProductEdit(); } 
+    else { db.collection('parties').doc(deletingId).delete(); if (editingPartyId === deletingId) cancelPartyEdit(); }
+    closeModal('modal-del-master'); showToast(`🗑️ ${deletingType} deleted from Cloud.`);
   };
 }
-
 
 // ================================================================
 //  EXCEL EXPORT (Respects History Filters)
@@ -1446,116 +952,69 @@ function ensureXLSX(callback) {
 function exportXLSX() {
   const filteredTxs = getFilteredHistory();
   if (!filteredTxs.length && !products.length) return showToast('⚠️ No data to export in current filter.');
-  ensureXLSX(() => buildAndDownloadXLSX(filteredTxs));
-}
-
-function buildAndDownloadXLSX(filteredTxs) {
-  const wb = XLSX.utils.book_new();
-  const today = new Date().toLocaleDateString('en-IN').replace(/\//g,'-');
-
-  // SHEET 1: All Transactions
-  const s1 = [['Date','Time','User','Type','Product','Qty','Unit','Party','Note','Lift Status','Lift Date/Deadline']];
-  filteredTxs.forEach(t => {
-    const d = new Date(t.ts);
-    const unit = (products.find(p => p.id === t.productId) || {unit:''}).unit || 'units';
-    let liftStatus = 'N/A';
-    let liftDate = '';
-    if (t.type === 'sale' && t.liftingDeadline) {
-      liftStatus = t.isLifted ? 'Completed' : 'Pending';
-      liftDate   = t.isLifted ? t.liftedAt.split('T')[0] : t.liftingDeadline;
-    }
-    s1.push([
-      d.toLocaleDateString('en-IN'), d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}),
-      t.user, t.type.charAt(0).toUpperCase() + t.type.slice(1),
-      t.productName, t.qty, unit, t.party || '', t.note || '', liftStatus, liftDate
-    ]);
-  });
-  const ws1 = XLSX.utils.aoa_to_sheet(s1);
-  ws1['!cols'] = [12,8,12,10,24,8,8,20,25,12,18].map(w => ({wch:w}));
-  XLSX.utils.book_append_sheet(wb, ws1, 'All Transactions');
-
-  // SHEET 2: Product Summary
-  const s2 = [['Product','Unit','Opening','Purchased','Sold','Balance','Low Alert','Product Deadline','Status']];
-  products.forEach(p => {
-    // Note: Summary uses ALL history to calculate true balance, not just filtered history
-    const txs    = history.filter(t => t.productId === p.id);
-    const bought = txs.filter(t => t.type === 'purchase').reduce((s, t) => s + t.qty, 0);
-    const sold   = txs.filter(t => t.type === 'sale').reduce((s, t) => s + t.qty, 0);
-    const bal    = (p.opening || 0) + bought - sold;
-    let status   = bal < 0 ? 'Critical' : bal <= p.threshold ? 'Low' : 'OK';
-    if (p.liftingBy && p.liftingBy < new Date().toISOString().split('T')[0] && bal > 0) status = 'Overdue';
-    s2.push([p.name, p.unit||'units', p.opening||0, bought, sold, bal, p.threshold, p.liftingBy||'', status]);
-  });
-  const ws2 = XLSX.utils.aoa_to_sheet(s2);
-  ws2['!cols'] = [24,8,10,12,10,12,10,18,10].map(w => ({wch:w}));
-  XLSX.utils.book_append_sheet(wb, ws2, 'Product Summary');
-
-  // SHEET 3: By Product (Filtered)
-  const s3 = [];
-  products.forEach(p => {
-    const pTxs = filteredTxs.filter(t => t.productId === p.id).sort((a,b) => new Date(a.ts) - new Date(b.ts));
-    if (!pTxs.length) return; // Skip products with no transactions in this date range
-    const unit = p.unit || 'units';
-    s3.push([p.name.toUpperCase() + ' (' + unit + ')', '', '', '', '', '', '', '']);
-    s3.push(['Date','Time','User','Type','Qty','Party','Note','Lift Status','Running Bal']);
-    
-    // Calculate running balance up to the start of the filter
-    const earlierTxs = history.filter(t => t.productId === p.id && t.ts < (pTxs[0] ? pTxs[0].ts : '9999'));
-    let running = (p.opening || 0) + 
-      earlierTxs.filter(t=>t.type==='purchase').reduce((s,t)=>s+t.qty,0) -
-      earlierTxs.filter(t=>t.type==='sale').reduce((s,t)=>s+t.qty,0);
-    
-    s3.push(['(Prior Balance)','','','','','','','', running]);
-
-    pTxs.forEach(t => {
-      const d = new Date(t.ts);
-      running += t.type === 'purchase' ? t.qty : -t.qty;
-      let liftStatus = 'N/A';
-      if (t.type === 'sale' && t.liftingDeadline) liftStatus = t.isLifted ? 'Completed' : 'Pending';
-      s3.push([
-        d.toLocaleDateString('en-IN'), d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}),
-        t.user, t.type === 'purchase' ? 'Purchase' : 'Sale',
-        t.type === 'purchase' ? t.qty : -t.qty, t.party || '', t.note || '', liftStatus, running
-      ]);
+  ensureXLSX(() => {
+    const wb = XLSX.utils.book_new(); const today = new Date().toLocaleDateString('en-IN').replace(/\//g,'-');
+    const s1 = [['Date','Time','User','Type','Product','Qty','Unit','Party','Note','Lift Status','Lift Date/Deadline']];
+    filteredTxs.forEach(t => {
+      const d = new Date(t.ts), unit = (products.find(p => p.id === t.productId) || {unit:''}).unit || 'units';
+      let liftStatus = 'N/A', liftDate = '';
+      if (t.type === 'sale' && t.liftingDeadline) { liftStatus = t.isLifted ? 'Completed' : 'Pending'; liftDate = t.isLifted ? t.liftedAt.split('T')[0] : t.liftingDeadline; }
+      s1.push([d.toLocaleDateString('en-IN'), d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}), t.user, t.type.charAt(0).toUpperCase() + t.type.slice(1), t.productName, t.qty, unit, t.party || '', t.note || '', liftStatus, liftDate]);
     });
-    s3.push([]);
-  });
-  const ws3 = XLSX.utils.aoa_to_sheet(s3);
-  ws3['!cols'] = [12,8,12,10,10,20,25,12,14].map(w => ({wch:w}));
-  XLSX.utils.book_append_sheet(wb, ws3, 'By Product');
+    const ws1 = XLSX.utils.aoa_to_sheet(s1); ws1['!cols'] = [12,8,12,10,24,8,8,20,25,12,18].map(w => ({wch:w})); XLSX.utils.book_append_sheet(wb, ws1, 'All Transactions');
 
-  XLSX.writeFile(wb, 'StockTrack_' + today + '.xlsx');
-  showToast('📊 Excel downloaded! (Filtered View)');
+    const s2 = [['Product','Unit','Opening','Purchased','Sold','Balance','Low Alert','Product Deadline','Status']];
+    products.forEach(p => {
+      const txs = history.filter(t => t.productId === p.id), bought = txs.filter(t => t.type === 'purchase').reduce((s, t) => s + t.qty, 0), sold = txs.filter(t => t.type === 'sale').reduce((s, t) => s + t.qty, 0), bal = (p.opening || 0) + bought - sold;
+      let status = bal < 0 ? 'Critical' : bal <= p.threshold ? 'Low' : 'OK';
+      if (p.liftingBy && p.liftingBy < new Date().toISOString().split('T')[0] && bal > 0) status = 'Overdue';
+      s2.push([p.name, p.unit||'units', p.opening||0, bought, sold, bal, p.threshold, p.liftingBy||'', status]);
+    });
+    const ws2 = XLSX.utils.aoa_to_sheet(s2); ws2['!cols'] = [24,8,10,12,10,12,10,18,10].map(w => ({wch:w})); XLSX.utils.book_append_sheet(wb, ws2, 'Product Summary');
+
+    const s3 = [];
+    products.forEach(p => {
+      const pTxs = filteredTxs.filter(t => t.productId === p.id).sort((a,b) => new Date(a.ts) - new Date(b.ts));
+      if (!pTxs.length) return;
+      s3.push([p.name.toUpperCase() + ' (' + (p.unit||'units') + ')', '', '', '', '', '', '', '']);
+      s3.push(['Date','Time','User','Type','Qty','Party','Note','Lift Status','Running Bal']);
+      const earlierTxs = history.filter(t => t.productId === p.id && t.ts < (pTxs[0] ? pTxs[0].ts : '9999'));
+      let running = (p.opening || 0) + earlierTxs.filter(t=>t.type==='purchase').reduce((s,t)=>s+t.qty,0) - earlierTxs.filter(t=>t.type==='sale').reduce((s,t)=>s+t.qty,0);
+      s3.push(['(Prior Balance)','','','','','','','', running]);
+      pTxs.forEach(t => {
+        const d = new Date(t.ts); running += t.type === 'purchase' ? t.qty : -t.qty;
+        let liftStatus = 'N/A'; if (t.type === 'sale' && t.liftingDeadline) liftStatus = t.isLifted ? 'Completed' : 'Pending';
+        s3.push([d.toLocaleDateString('en-IN'), d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}), t.user, t.type === 'purchase' ? 'Purchase' : 'Sale', t.type === 'purchase' ? t.qty : -t.qty, t.party || '', t.note || '', liftStatus, running]);
+      });
+      s3.push([]);
+    });
+    const ws3 = XLSX.utils.aoa_to_sheet(s3); ws3['!cols'] = [12,8,12,10,10,20,25,12,14].map(w => ({wch:w})); XLSX.utils.book_append_sheet(wb, ws3, 'By Product');
+    XLSX.writeFile(wb, 'StockTrack_' + today + '.xlsx'); showToast('📊 Excel downloaded! (Filtered View)');
+  });
 }
 
 // ================================================================
-//  DATA EXPORT & IMPORT (JSON / HTML)
+//  DATA BACKUP & IMPORT (JSON / HTML)
 // ================================================================
 function exportDataJSON() {
   const data = { version: 3, exportedAt: new Date().toISOString(), products, history, accounts, parties };
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], {type: 'application/json;charset=utf-8'});
-  const a    = document.createElement('a');
-  a.href     = URL.createObjectURL(blob);
-  a.download = 'StockTrack_Data_' + new Date().toISOString().split('T')[0] + '.json';
-  a.click(); showToast('📤 Data file exported! Share via WhatsApp.');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'StockTrack_Backup_' + new Date().toISOString().split('T')[0] + '.json'; a.click(); showToast('📤 Data exported successfully.');
 }
-
 function triggerImportDialog() { document.getElementById('app-file-importer').click(); }
-
 function handleFileImport(event) {
   const file = event.target.files && event.target.files[0]; if (!file) return;
   const reader = new FileReader();
-  reader.onload = function(ev) {
+  reader.onload = async function(ev) {
     try {
+      showToast('☁️ Uploading backup to Cloud...');
       const data = JSON.parse(ev.target.result);
-      if (data.products) { data.products.forEach(np => { const idx = products.findIndex(p => p.id === np.id); if (idx >= 0) products[idx] = { ...products[idx], ...np }; else products.push(np); }); saveData(KEY_P, products); }
-      if (data.history)  { data.history.forEach(nt => { if (!history.some(h => h.id === nt.id)) history.push(nt); }); saveData(KEY_H, history); }
-      if (data.accounts) { data.accounts.forEach(na => { const idx = accounts.findIndex(a => a.id === na.id); if (idx >= 0) accounts[idx] = na; else accounts.push(na); }); saveData(KEY_A, accounts); }
-      if (data.parties)  { data.parties.forEach(np => { const idx = parties.findIndex(p => p.id === np.id); if (idx >= 0) parties[idx] = np; else parties.push(np); }); saveData(KEY_PT, parties); }
-      
-      showPage('dashboard'); showToast(`✅ Loaded data and synchronized!`);
-      event.target.value = ''; // reset
+      if (data.products) for (const p of data.products) await db.collection('products').doc(p.id).set(p);
+      if (data.history)  for (const h of data.history)  await db.collection('history').doc(h.id).set(h);
+      if (data.accounts) for (const a of data.accounts) await db.collection('accounts').doc(a.id).set(a);
+      if (data.parties)  for (const pt of data.parties) await db.collection('parties').doc(pt.id).set(pt);
+      showPage('dashboard'); showToast(`✅ Backup fully restored to Cloud!`); event.target.value = '';
     } catch(err) { showToast('⚠️ Error reading file.'); }
   };
   reader.readAsText(file);
@@ -1570,10 +1029,8 @@ function showToast(msg, duration = 2800) { const t = document.getElementById('to
 function escHtml(str) { return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 document.addEventListener('DOMContentLoaded', function() {
-  checkAndHideInstallButton();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
   document.querySelectorAll('.modal-overlay').forEach(overlay => { overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.classList.remove('open'); }); });
-  if (checkAuthStatus()) showPage('dashboard');
+  initCloudSync(); // Starts the Firebase magic
 });
 </script>
 </body>

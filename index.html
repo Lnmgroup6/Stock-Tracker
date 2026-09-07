@@ -23,6 +23,7 @@
       --green: #3fb950; --green-glow: rgba(63,185,80,0.15);
       --red: #f85149;   --red-glow: rgba(248,81,73,0.15);
       --amber: #e3b341; --amber-glow: rgba(227,179,65,0.15);
+      --gold: #f2c94c;  --gold-glow: rgba(242, 201, 76, 0.15);
       --purple: #bc8cff; --teal: #39d353;
       --radius: 14px; --radius-sm: 8px;
       --shadow: 0 4px 24px rgba(0,0,0,0.4);
@@ -42,22 +43,29 @@
     .header-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .header-icon {
       width: 36px; height: 36px; flex-shrink: 0;
-      background: linear-gradient(135deg, var(--primary), var(--purple));
+      background: linear-gradient(135deg, var(--gold), var(--amber));
       border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px;
     }
     .header-title { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; }
     .header-sub   { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
     
-    .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-    .header-install-btn {
-      background: linear-gradient(135deg, rgba(88,166,255,0.2), rgba(188,140,255,0.2));
-      border: 1px solid var(--primary); color: var(--primary);
+    .header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .header-btn {
       padding: 6px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
       cursor: pointer; display: flex; align-items: center; gap: 4px;
       transition: all var(--transition);
     }
-    .header-install-btn:hover { background: var(--primary); color: #fff; }
-    .header-date  { font-size: 10px; color: var(--text-muted); text-align: right; line-height: 1.4; }
+    .btn-install {
+      background: linear-gradient(135deg, rgba(88,166,255,0.2), rgba(188,140,255,0.2));
+      border: 1px solid var(--primary); color: var(--primary);
+    }
+    .btn-install:hover { background: var(--primary); color: #fff; }
+    .btn-logout {
+      background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+    }
+    .btn-logout:hover { border-color: var(--text); color: var(--text); }
+    .header-date  { font-size: 10px; color: var(--text-muted); text-align: right; line-height: 1.4; display:none; }
+    @media (min-width: 360px) { .header-date { display:block; } }
 
     /* SHARED DATA BANNER */
     .shared-banner {
@@ -75,9 +83,7 @@
       padding: 7px 14px; background: var(--primary); border: none;
       border-radius: 100px; color: #fff; font-size: 12px; font-weight: 700;
       cursor: pointer; font-family: 'Inter', sans-serif;
-      transition: filter var(--transition);
     }
-    .banner-btn-load:hover { filter: brightness(1.1); }
     .banner-btn-dismiss {
       padding: 7px 10px; background: transparent; border: 1px solid var(--border);
       border-radius: 100px; color: var(--text-muted); font-size: 12px; font-weight: 600;
@@ -88,7 +94,7 @@
     button, a, .nav-item, .filter-chip, .icon-btn, .export-btn,
     .type-btn, .stock-item, .tx-item, .product-item, .banner-btn-load,
     .banner-btn-dismiss, .btn-m-cancel, .btn-m-confirm-red, .btn-m-confirm-blue,
-    .btn-cancel-edit, .btn-save-product, .header-install-btn {
+    .btn-cancel-edit, .btn-save-product, .header-btn, .quick-date-btn {
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
     }
@@ -108,11 +114,11 @@
       font-weight: 500; transition: color var(--transition); padding: 6px 0; position: relative;
     }
     .nav-item .nav-icon { font-size: 20px; transition: transform var(--transition); }
-    .nav-item.active { color: var(--primary); }
+    .nav-item.active { color: var(--gold); }
     .nav-item.active .nav-icon { transform: scale(1.15); }
     .nav-item::before {
       content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 2px;
-      background: var(--primary); border-radius: 0 0 4px 4px;
+      background: var(--gold); border-radius: 0 0 4px 4px;
       transform: scaleX(0); transition: transform var(--transition);
     }
     .nav-item.active::before { transform: scaleX(1); }
@@ -129,7 +135,7 @@
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
     .summary-card {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 14px; position: relative; overflow: hidden;
+      padding: 14px; position: relative; overflow: hidden; cursor: pointer;
     }
     .summary-card::before {
       content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
@@ -137,6 +143,7 @@
     .summary-card.blue::before  { background: var(--primary); }
     .summary-card.amber::before { background: var(--amber); }
     .summary-card.green::before { background: var(--green); }
+    .summary-card.gold::before  { background: var(--gold); }
     .summary-card.red::before   { background: var(--red); }
     .summary-card .label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
     .summary-card .value { font-size: 24px; font-weight: 800; margin-top: 4px; letter-spacing: -0.5px; }
@@ -171,6 +178,15 @@
     .bal-low      { color: var(--amber); }
     .bal-critical { color: var(--red); }
 
+    .zero-balance-header {
+      background: rgba(227,179,65,0.08); border: 1px dashed rgba(227,179,65,0.3);
+      color: var(--amber); padding: 12px 16px; border-radius: var(--radius);
+      margin-top: 16px; margin-bottom: 10px; font-size: 13px; font-weight: 700;
+      cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+      transition: background var(--transition);
+    }
+    .zero-balance-header:active { background: rgba(227,179,65,0.15); }
+
     /* FORMS */
     .form-group { margin-bottom: 14px; }
     .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
@@ -178,9 +194,11 @@
       width: 100%; padding: 13px 14px; background: var(--surface2); border: 1px solid var(--border);
       border-radius: var(--radius-sm); color: var(--text); font-size: 15px; font-family: 'Inter', sans-serif;
       outline: none; transition: border-color var(--transition), box-shadow var(--transition);
-      -webkit-appearance: none;
+      -webkit-appearance: none; color-scheme: dark;
     }
-    .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+    .form-control:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow); }
+    .form-control[readonly] { opacity: 0.7; cursor: not-allowed; }
+    
     select.form-control {
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b949e' d='M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
@@ -191,15 +209,16 @@
       border-radius: var(--radius-sm); color: var(--text-muted); font-size: 14px; font-weight: 600;
       cursor: pointer; transition: all var(--transition); font-family: 'Inter', sans-serif; text-align: center;
     }
-    .type-btn.active.sale     { background: var(--red-glow);   border-color: var(--red);   color: var(--red); }
+    /* UPDATED SALE COLOR TO GOLD/AMBER */
+    .type-btn.active.sale     { background: var(--gold-glow);   border-color: var(--gold);   color: var(--gold); }
     .type-btn.active.purchase { background: var(--green-glow); border-color: var(--green); color: var(--green); }
     .btn {
       width: 100%; padding: 15px; border-radius: var(--radius); border: none; font-size: 15px;
       font-weight: 700; cursor: pointer; transition: all var(--transition); font-family: 'Inter', sans-serif;
     }
-    .btn-sale     { background: linear-gradient(135deg, var(--red), #cf222e);   color: #fff; }
+    .btn-sale     { background: linear-gradient(135deg, #f2c94c, #d4a72c);   color: #111; }
     .btn-purchase { background: linear-gradient(135deg, var(--green), #2da44e); color: #fff; }
-    .btn-add      { background: linear-gradient(135deg, var(--primary), #1f6feb); color: #fff; }
+    .btn-add      { background: linear-gradient(135deg, var(--gold), var(--amber)); color: #111; }
     .btn:active   { transform: scale(0.98); }
 
     /* HISTORY */
@@ -210,7 +229,19 @@
       border-radius: 100px; font-size: 12px; font-weight: 500; cursor: pointer;
       color: var(--text-muted); transition: all var(--transition);
     }
-    .filter-chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .filter-chip.active { background: var(--gold); border-color: var(--gold); color: #111; font-weight: 700;}
+    
+    .date-filter-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;
+    }
+    .quick-date-row {
+      display: flex; gap: 8px; margin-bottom: 16px; justify-content: flex-end;
+    }
+    .quick-date-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+      font-size: 11px; padding: 4px 10px; border-radius: 100px; cursor: pointer;
+    }
+    .quick-date-btn:active { background: var(--surface2); }
 
     /* EXPORT GROUP */
     .export-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
@@ -220,7 +251,7 @@
       cursor: pointer; transition: all var(--transition); font-family: 'Inter', sans-serif;
       display: flex; align-items: center; justify-content: center; gap: 8px;
     }
-    .export-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .export-btn:hover { border-color: var(--gold); color: var(--gold); }
     .export-info {
       background: var(--surface2); border: 1px solid var(--border);
       border-radius: var(--radius-sm); padding: 12px 14px;
@@ -234,15 +265,15 @@
       padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
     }
     .tx-badge { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-    .tx-badge.sale     { background: var(--red-glow); }
-    .tx-badge.purchase { background: var(--green-glow); }
+    .tx-badge.sale     { background: var(--gold-glow); color: var(--gold); }
+    .tx-badge.purchase { background: var(--green-glow); color: var(--green); }
     .tx-info    { flex: 1; min-width: 0; }
     .tx-product { font-size: 14px; font-weight: 600; }
     .tx-meta    { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
     .tx-right   { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
     .tx-amount  { text-align: right; }
     .tx-amount .qty { font-size: 17px; font-weight: 700; }
-    .tx-amount.sale .qty     { color: var(--red); }
+    .tx-amount.sale .qty     { color: var(--gold); }
     .tx-amount.sale .qty::before     { content: '−'; }
     .tx-amount.purchase .qty { color: var(--green); }
     .tx-amount.purchase .qty::before { content: '+'; }
@@ -253,13 +284,13 @@
     .empty-state .emoji { font-size: 44px; margin-bottom: 12px; }
     .empty-state p { font-size: 14px; }
 
-    /* PRODUCTS */
-    .product-form-card {
+    /* MASTER DATA (Products & Parties) */
+    .master-form-card {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--radius); padding: 18px 16px; margin-bottom: 16px;
     }
-    .product-form-card.editing { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
-    .product-form-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+    .master-form-card.editing { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow); }
+    .master-form-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .btn-row  { display: flex; gap: 10px; margin-top: 14px; }
     .btn-cancel-edit {
@@ -269,24 +300,26 @@
     }
     .btn-cancel-edit:hover { border-color: var(--text-muted); color: var(--text); }
 
-    .product-item {
+    .master-item {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
       padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
     }
-    .product-info   { flex: 1; min-width: 0; }
-    .product-name   { font-size: 15px; font-weight: 600; }
-    .product-detail { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
-    .product-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .master-info   { flex: 1; min-width: 0; }
+    .master-name   { font-size: 15px; font-weight: 600; display:flex; align-items:center; gap:8px;}
+    .master-detail { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+    .master-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
     .icon-btn {
       width: 34px; height: 34px; border: 1px solid var(--border); background: var(--surface2);
       border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center;
       justify-content: center; font-size: 15px; transition: all var(--transition);
     }
-    .icon-btn.edit:hover { border-color: var(--primary); background: var(--primary-glow); }
+    .icon-btn.edit:hover { border-color: var(--gold); background: var(--gold-glow); }
     .icon-btn.del:hover  { border-color: var(--red);     background: var(--red-glow); }
+    .icon-btn.check { border-color: var(--border); color: var(--text-muted); }
+    .icon-btn.check:hover { border-color: var(--green); color: var(--green); background: var(--green-glow); }
 
-    /* MODALS */
+    /* MODALS & OVERLAYS */
     .modal-overlay {
       position: fixed; top: 0; right: 0; bottom: 0; left: 0;
       background: rgba(0,0,0,0.75); z-index: 200;
@@ -306,7 +339,25 @@
     .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
     .btn-m-cancel      { flex: 1; padding: 13px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
     .btn-m-confirm-red { flex: 1; padding: 13px; background: var(--red); border: none; color: #fff; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
-    .btn-m-confirm-blue{ flex: 1; padding: 13px; background: linear-gradient(135deg, var(--primary), var(--purple)); border: none; color: #fff; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .btn-m-confirm-blue{ flex: 1; padding: 13px; background: linear-gradient(135deg, var(--gold), var(--amber)); border: none; color: #111; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+
+    /* LOGIN SCREEN OVERLAY */
+    #login-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg); z-index: 9999;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    #login-overlay .modal {
+      border-radius: var(--radius); padding: 30px 24px; animation: modalFadeIn 0.3s ease;
+      transform: none; margin: auto; border: 1px solid var(--border);
+    }
+    .role-badge {
+      display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .role-badge.admin { background: rgba(188,140,255,0.15); color: var(--purple); border-color: rgba(188,140,255,0.4); }
+    .role-badge.user  { background: rgba(88,166,255,0.15); color: var(--primary); border-color: rgba(88,166,255,0.4); }
 
     .install-step-card {
       background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
@@ -320,7 +371,7 @@
       background: var(--surface2); color: var(--text); border: 1px solid var(--border);
       border-radius: 100px; padding: 10px 20px; font-size: 13px; font-weight: 600;
       opacity: 0; pointer-events: none; transition: all 0.25s ease;
-      z-index: 999; white-space: nowrap; box-shadow: var(--shadow);
+      z-index: 9999; white-space: nowrap; box-shadow: var(--shadow);
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -332,6 +383,37 @@
   </style>
 </head>
 <body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay">
+  <div class="modal">
+    <div style="text-align:center; font-size:40px; margin-bottom:12px">📦</div>
+    <div class="modal-title" style="text-align:center">Welcome to StockTrack</div>
+    <p style="font-size:13px; color:var(--text-muted); text-align:center; margin-bottom:24px; line-height:1.5;">
+      Please log in with your Name and Password to access the inventory system.
+    </p>
+    
+    <div class="form-group">
+      <label class="form-label" for="login-name">Name</label>
+      <input class="form-control" id="login-name" type="text" placeholder="Enter your name" />
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label" for="login-pass">Password</label>
+      <input class="form-control" id="login-pass" type="password" placeholder="Enter your password" />
+    </div>
+    
+    <button class="btn btn-add" style="margin-top:20px; margin-bottom:24px" onclick="performLogin()">Log In</button>
+    
+    <div style="border-top: 1px solid var(--border); padding-top: 20px; text-align: center;">
+      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">First time here or received an update?</div>
+      <button class="export-btn" style="border-color: rgba(88,166,255,0.4); color: var(--primary); font-size: 13px; padding: 10px;" onclick="triggerImportDialog()">
+        📥 Import Data File
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="app">
 
   <!-- HEADER -->
@@ -339,50 +421,35 @@
     <div class="header-brand">
       <div class="header-icon">📦</div>
       <div>
-        <div class="header-title">StockTrack</div>
-        <div class="header-sub">Inventory Manager</div>
+        <div class="header-title">StockTrack <span id="header-role-badge" class="role-badge"></span></div>
+        <div class="header-sub">Welcome, <span id="header-user-name">User</span></div>
       </div>
     </div>
     <div class="header-actions">
-      <button class="header-install-btn" id="btn-install-app" onclick="triggerInstallFlow()">
-        📲 Install App
-      </button>
-      <div class="header-date" id="header-date"></div>
+      <button class="header-btn btn-install" id="btn-install-app" onclick="triggerInstallFlow()">📲 Install</button>
+      <button class="header-btn btn-logout" onclick="performLogout()">Log out</button>
     </div>
   </header>
-
-  <!-- SHARED DATA BANNER -->
-  <div class="shared-banner" id="shared-data-banner" style="display:none">
-    <div class="banner-icon">📦</div>
-    <div class="banner-text">
-      <strong>Shared Data Detected</strong>
-      <span id="banner-msg">This file contains shared stock data.</span>
-    </div>
-    <div class="banner-actions">
-      <button class="banner-btn-load"    onclick="loadSharedData()">Load Data</button>
-      <button class="banner-btn-dismiss" onclick="document.getElementById('shared-data-banner').style.display='none'">✕</button>
-    </div>
-  </div>
 
   <!-- PAGE: DASHBOARD -->
   <div class="page active" id="page-dashboard">
     <div class="summary-grid">
-      <div class="summary-card blue">
+      <div class="summary-card blue" onclick="showPage('master')">
         <div class="label">Total Products</div>
         <div class="value" id="stat-total">0</div>
         <div class="icon">📦</div>
       </div>
-      <div class="summary-card amber">
-        <div class="label">Low Stock Alerts</div>
-        <div class="value" id="stat-low">0</div>
-        <div class="icon">⚠️</div>
+      <div class="summary-card gold" onclick="openPendingLiftsModal()">
+        <div class="label">Pending Lifts</div>
+        <div class="value" id="stat-pending-lifts">0</div>
+        <div class="icon">🚚</div>
       </div>
       <div class="summary-card green">
         <div class="label">Purchased Today</div>
         <div class="value" id="stat-purchased">0</div>
         <div class="icon">📥</div>
       </div>
-      <div class="summary-card red">
+      <div class="summary-card gold">
         <div class="label">Sold Today</div>
         <div class="value" id="stat-sold">0</div>
         <div class="icon">🛒</div>
@@ -407,13 +474,23 @@
       <label class="form-label" for="rec-qty">Quantity</label>
       <input class="form-control" id="rec-qty" type="number" min="1" placeholder="Enter quantity" />
     </div>
+    
+    <!-- Party Autocomplete -->
     <div class="form-group">
-      <label class="form-label" for="rec-user">Your Name</label>
-      <input class="form-control" id="rec-user" type="text" placeholder="e.g. Piyush / LNM" />
+      <label class="form-label" id="lbl-rec-party" for="rec-party">Sale To</label>
+      <input class="form-control" id="rec-party" type="text" list="party-list" placeholder="Search or enter party name" />
+      <datalist id="party-list"></datalist>
     </div>
+
+    <!-- Lifting Date (Sale Only) -->
+    <div class="form-group" id="group-rec-lift-date">
+      <label class="form-label" for="rec-lift-date">Last Lifting Date (Optional)</label>
+      <input class="form-control" id="rec-lift-date" type="date" />
+    </div>
+
     <div class="form-group">
       <label class="form-label" for="rec-note">Rate / Note (optional)</label>
-      <input class="form-control" id="rec-note" type="text" placeholder="e.g. @4908" />
+      <input class="form-control" id="rec-note" type="text" maxlength="150" placeholder="e.g. @DO Rate/ Actual Rate" />
     </div>
     <button class="btn btn-sale" id="submit-btn" onclick="recordTransaction()">Record Sale</button>
   </div>
@@ -424,59 +501,155 @@
       <button class="export-btn" onclick="exportXLSX()">
         📊 Export as Excel (.xlsx) — 3 Sheets
       </button>
-      <button class="export-btn" onclick="exportDataJSON()" style="border-color:rgba(63,185,80,0.5);color:var(--green)">
-        📤 Export Data (.json) — for WhatsApp Sharing
-      </button>
-      <button class="export-btn" onclick="triggerImportDialog()" style="border-color:rgba(88,166,255,0.5);color:var(--primary)">
-        📥 Import Data (.json) — Upload WhatsApp File
-      </button>
+      <div style="display:flex;gap:10px;">
+        <button class="export-btn" onclick="exportDataJSON()" style="flex:1; border-color:rgba(63,185,80,0.5);color:var(--green);font-size:12px;">
+          📤 Backup App Data
+        </button>
+        <button class="export-btn" onclick="triggerImportDialog()" style="flex:1; border-color:rgba(88,166,255,0.5);color:var(--primary);font-size:12px;">
+          📥 Restore Data
+        </button>
+      </div>
     </div>
 
-    <div class="export-info">
-      <strong>💡 How sharing works:</strong><br>
-      1️⃣ Tap <em>“Export Data (.json)”</em> → saves your latest stock & transactions.<br>
-      2️⃣ Share that <code>.json</code> file in WhatsApp.<br>
-      3️⃣ Colleague opens StockTrack on Phone/Laptop, taps <em>“Import Data”</em> and selects the file!
+    <div class="section-title" style="margin-top:20px;">Transaction Log Filters</div>
+    
+    <div class="form-group">
+      <label class="form-label" style="font-size:10px;">Limit view</label>
+      <select class="form-control" id="hist-limit" onchange="renderHistory()">
+        <option value="15">Last 15 transactions</option>
+        <option value="30">Last 30 transactions</option>
+        <option value="all">Show All</option>
+      </select>
     </div>
 
-    <div class="section-title">Transaction Log</div>
+    <div class="date-filter-grid">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label" style="font-size:10px;">From Date</label>
+        <input class="form-control" type="date" id="hist-from" onchange="renderHistory()" />
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label" style="font-size:10px;">To Date</label>
+        <input class="form-control" type="date" id="hist-to" onchange="renderHistory()" />
+      </div>
+    </div>
+    <div class="quick-date-row">
+      <button class="quick-date-btn" onclick="setHistoryRange(3)">3 Days</button>
+      <button class="quick-date-btn" onclick="setHistoryRange(7)">7 Days</button>
+      <button class="quick-date-btn" onclick="setHistoryRange(null)">Clear</button>
+    </div>
+
     <div class="filter-row">
-      <div class="filter-chip active" onclick="setFilter(this,'all')">All</div>
-      <div class="filter-chip" onclick="setFilter(this,'sale')">Sales</div>
-      <div class="filter-chip" onclick="setFilter(this,'purchase')">Purchases</div>
+      <div class="filter-chip active" id="chip-filter-all" onclick="setFilter('all')">All</div>
+      <div class="filter-chip" id="chip-filter-sale" onclick="setFilter('sale')">Sales</div>
+      <div class="filter-chip" id="chip-filter-purchase" onclick="setFilter('purchase')">Purchases</div>
     </div>
     <div id="history-list"></div>
   </div>
 
-  <!-- PAGE: PRODUCTS -->
-  <div class="page" id="page-products">
-    <div class="product-form-card" id="product-form-card">
-      <div class="product-form-title" id="product-form-title">➕ Add New Product</div>
+  <!-- PAGE: MASTER DATA (Products & Parties) -->
+  <div class="page" id="page-master">
+    <div class="type-toggle" style="margin-bottom:20px;">
+      <button class="type-btn active" id="btn-tab-products" onclick="setMasterTab('products')" style="border-color:var(--border); color:var(--text);">📦 Products</button>
+      <button class="type-btn"        id="btn-tab-parties"  onclick="setMasterTab('parties')"  style="border-color:var(--border); color:var(--text);">🏢 Parties</button>
+    </div>
+
+    <!-- PRODUCTS SECTION -->
+    <div id="master-sec-products">
+      <div class="master-form-card" id="product-form-card">
+        <div class="master-form-title" id="product-form-title">➕ Add New Product</div>
+        <div class="form-group">
+          <label class="form-label" for="p-name">Product Name</label>
+          <input class="form-control" id="p-name" type="text" placeholder="e.g. SBD M-30 @4908" />
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" for="p-opening">Opening Stock</label>
+            <input class="form-control" id="p-opening" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" for="p-threshold">Low Stock Alert At</label>
+            <input class="form-control" id="p-threshold" type="number" min="0" placeholder="10" />
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:14px">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" for="p-unit">Unit (optional)</label>
+            <input class="form-control" id="p-unit" type="text" placeholder="e.g. Qtls" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" for="p-lift-by">Lifting By (Deadline)</label>
+            <input class="form-control" id="p-lift-by" type="date" />
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-cancel-edit" id="btn-cancel-product-edit" style="display:none" onclick="cancelProductEdit()">✕ Cancel</button>
+          <button class="btn btn-add" id="btn-save-product" onclick="saveProduct()">Add Product</button>
+        </div>
+      </div>
+      
+      <div class="section-title">Your Products</div>
+      <div id="product-list"></div>
+    </div>
+
+    <!-- PARTIES SECTION -->
+    <div id="master-sec-parties" style="display:none;">
+      <div class="master-form-card" id="party-form-card">
+        <div class="master-form-title" id="party-form-title">➕ Add New Party</div>
+        <div class="form-group">
+          <label class="form-label" for="pt-name">Party Name</label>
+          <input class="form-control" id="pt-name" type="text" placeholder="e.g. LNM Group" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pt-nick">Nick Name (optional)</label>
+          <input class="form-control" id="pt-nick" type="text" placeholder="e.g. LNM" />
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" for="pt-city">City</label>
+            <input class="form-control" id="pt-city" type="text" placeholder="e.g. Delhi" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" for="pt-mobile">Mobile No (optional)</label>
+            <input class="form-control" id="pt-mobile" type="text" placeholder="e.g. 9876543210" />
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-cancel-edit" id="btn-cancel-party-edit" style="display:none" onclick="cancelPartyEdit()">✕ Cancel</button>
+          <button class="btn btn-add" id="btn-save-party" onclick="saveParty()">Add Party</button>
+        </div>
+      </div>
+      
+      <div class="section-title">Saved Parties</div>
+      <div id="party-list-display"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: USERS (Admin Only) -->
+  <div class="page" id="page-users">
+    <div class="master-form-card">
+      <div class="master-form-title">➕ Create New User</div>
       <div class="form-group">
-        <label class="form-label" for="p-name">Product Name</label>
-        <input class="form-control" id="p-name" type="text" placeholder="e.g. SBD M-30 @4908" />
+        <label class="form-label" for="new-user-name">Name</label>
+        <input class="form-control" id="new-user-name" type="text" placeholder="e.g. Piyush" />
       </div>
       <div class="form-row">
         <div class="form-group" style="margin-bottom:0">
-          <label class="form-label" for="p-opening">Opening Stock</label>
-          <input class="form-control" id="p-opening" type="number" min="0" placeholder="0" />
+          <label class="form-label" for="new-user-pass">Password</label>
+          <input class="form-control" id="new-user-pass" type="text" placeholder="e.g. 1234" />
         </div>
         <div class="form-group" style="margin-bottom:0">
-          <label class="form-label" for="p-threshold">Low Stock Alert At</label>
-          <input class="form-control" id="p-threshold" type="number" min="0" placeholder="10" />
+          <label class="form-label" for="new-user-role">Role</label>
+          <select class="form-control" id="new-user-role">
+            <option value="user">User (Record only)</option>
+            <option value="admin">Admin (All rights)</option>
+          </select>
         </div>
       </div>
-      <div class="form-group" style="margin-top:14px">
-        <label class="form-label" for="p-unit">Unit (optional)</label>
-        <input class="form-control" id="p-unit" type="text" placeholder="e.g. Qtls, bags, pcs" />
-      </div>
-      <div class="btn-row">
-        <button class="btn-cancel-edit" id="btn-cancel-product-edit" style="display:none" onclick="cancelProductEdit()">✕ Cancel</button>
-        <button class="btn btn-add" id="btn-save-product" onclick="saveProduct()">Add Product</button>
-      </div>
+      <button class="btn btn-add" style="margin-top:14px" onclick="createUser()">Add User</button>
     </div>
-    <div class="section-title">Your Products</div>
-    <div id="product-list"></div>
+    
+    <div class="section-title">Team Members</div>
+    <div id="users-list"></div>
   </div>
 
   <!-- BOTTOM NAV -->
@@ -484,21 +657,37 @@
     <button class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')"><span class="nav-icon">📊</span>Dashboard</button>
     <button class="nav-item"        id="nav-record"    onclick="showPage('record')">   <span class="nav-icon">✏️</span>Record</button>
     <button class="nav-item"        id="nav-history"   onclick="showPage('history')">  <span class="nav-icon">🕒</span>History</button>
-    <button class="nav-item"        id="nav-products"  onclick="showPage('products')"> <span class="nav-icon">🗂️</span>Products</button>
+    <button class="nav-item"        id="nav-master"    onclick="showPage('master')">   <span class="nav-icon">🗂️</span>Master Data</button>
+    <button class="nav-item"        id="nav-users"     onclick="showPage('users')" style="display:none;"><span class="nav-icon">👥</span>Users</button>
   </nav>
 </div>
 
 <!-- ==================== MODALS ==================== -->
 
-<!-- Delete Product -->
-<div class="modal-overlay" id="modal-del-product">
+<!-- Pending Lifts Modal -->
+<div class="modal-overlay" id="modal-pending-lifts">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">🗑️ Delete Product</div>
-    <p style="font-size:14px;color:var(--text-muted);line-height:1.5" id="msg-del-product"></p>
+    <div class="modal-title">🚚 Pending Lifts</div>
+    <p style="font-size:12px;color:var(--text-muted);line-height:1.4;margin-bottom:16px;">
+      These sales have a Lifting Deadline assigned but have not been marked as physically dispatched. Click the checkmark when the truck leaves.
+    </p>
+    <div id="pending-lifts-list"></div>
     <div class="modal-actions">
-      <button class="btn-m-cancel"      onclick="closeModal('modal-del-product')">Cancel</button>
-      <button class="btn-m-confirm-red" id="confirm-del-product">Delete</button>
+      <button class="btn-m-cancel" onclick="closeModal('modal-pending-lifts')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Product/Party -->
+<div class="modal-overlay" id="modal-del-master">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="title-del-master">🗑️ Delete</div>
+    <p style="font-size:14px;color:var(--text-muted);line-height:1.5" id="msg-del-master"></p>
+    <div class="modal-actions">
+      <button class="btn-m-cancel"      onclick="closeModal('modal-del-master')">Cancel</button>
+      <button class="btn-m-confirm-red" id="confirm-del-master">Delete</button>
     </div>
   </div>
 </div>
@@ -536,12 +725,16 @@
       <input class="form-control" id="edit-tx-qty" type="number" min="1" />
     </div>
     <div class="form-group">
-      <label class="form-label" for="edit-tx-user">Updated By</label>
-      <input class="form-control" id="edit-tx-user" type="text" />
+      <label class="form-label" for="edit-tx-party">Party</label>
+      <input class="form-control" id="edit-tx-party" type="text" list="party-list" />
+    </div>
+    <div class="form-group" id="group-edit-tx-lift-date">
+      <label class="form-label" for="edit-tx-lift-date">Last Lifting Date</label>
+      <input class="form-control" id="edit-tx-lift-date" type="date" />
     </div>
     <div class="form-group">
-      <label class="form-label" for="edit-tx-note">Rate / Note (optional)</label>
-      <input class="form-control" id="edit-tx-note" type="text" />
+      <label class="form-label" for="edit-tx-note">Rate / Note</label>
+      <input class="form-control" id="edit-tx-note" type="text" maxlength="150" />
     </div>
     <div class="modal-actions">
       <button class="btn-m-cancel"        onclick="closeModal('modal-edit-tx')">Cancel</button>
@@ -550,152 +743,121 @@
   </div>
 </div>
 
-<!-- App Install Instructions Modal -->
-<div class="modal-overlay" id="modal-install-guide">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">📲 Install StockTrack App</div>
-    
-    <div class="install-step-card">
-      <strong>🌐 Samsung Internet Browser (Android)</strong>
-      1. Tap the bottom right <strong>menu (≡)</strong> icon.<br>
-      2. Tap <strong>“Add page to”</strong>.<br>
-      3. Choose <strong>“App screen”</strong> (or “Home screen”).
-    </div>
-
-    <div class="install-step-card">
-      <strong>🌐 Google Chrome (Android / Phone)</strong>
-      1. Tap top right <strong>three dots (⋮)</strong>.<br>
-      2. Tap <strong>“Install app”</strong> (or “Add to Home screen”).
-    </div>
-
-    <div class="install-step-card">
-      <strong>🍏 Apple iPhone / iPad (Safari)</strong>
-      1. Tap the <strong>Share</strong> button (square with arrow up ⬆).<br>
-      2. Scroll and tap <strong>“Add to Home Screen”</strong>.
-    </div>
-
-    <div class="install-step-card">
-      <strong>💻 Laptop / PC (Chrome or Edge)</strong>
-      1. Look at the browser address bar on top right.<br>
-      2. Click the <strong>Install (⊕)</strong> icon.
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn-m-confirm-blue" onclick="closeModal('modal-install-guide')">Got It</button>
-    </div>
-  </div>
-</div>
-
-<!-- Hidden universal file input for uploading JSON / HTML files -->
+<!-- Hidden universal file input -->
 <input type="file" id="app-file-importer" accept=".json,.html,.txt,application/json,text/html,text/plain" style="display:none;" onchange="handleFileImport(event)" />
 
 <div class="toast" id="toast"></div>
 
 <script>
 // ================================================================
-//  EMBEDDED INITIAL DATA (Guaranteed default seed data)
-// ================================================================
-const DEFAULT_PRODUCTS = [
-  {"id":"1788613341409","name":"SBD M-30 @4908","opening":0,"threshold":10,"unit":"Qtls"},
-  {"id":"1788613505566","name":"SBD S-30 @4881","opening":0,"threshold":10,"unit":"Qtls"},
-  {"id":"1788613527366","name":"Karnal M-31 @4902","opening":0,"threshold":10,"unit":"Qtls"},
-  {"id":"1788613573796","name":"Karnal M-31 @4857","opening":0,"threshold":10,"unit":"Qtls"},
-  {"id":"1788613851205","name":"Panipat M-31 @4891","opening":0,"threshold":10,"unit":"Qtls"}
-];
-
-const DEFAULT_HISTORY = [
-  {"id":"1788613745176","type":"sale","productId":"1788613505566","productName":"SBD S-30 @4881","qty":250,"user":"Piyush","note":"@4871","ts":"2026-09-05T13:09:05.176Z"},
-  {"id":"1788613771941","type":"sale","productId":"1788613341409","productName":"SBD M-30 @4908","qty":150,"user":"Piyush","note":"@4902","ts":"2026-09-05T13:09:31.941Z"},
-  {"id":"1788613789966","type":"sale","productId":"1788613341409","productName":"SBD M-30 @4908","qty":25,"user":"Piyush","note":"@4892","ts":"2026-09-05T13:09:49.966Z","editedAt":"2026-09-05T14:43:25.339Z"},
-  {"id":"1788613886807","type":"sale","productId":"1788613851205","productName":"Panipat M-31 @4891","qty":170,"user":"Piyush","note":"@4885","ts":"2026-09-05T13:11:26.807Z","editedAt":"2026-09-05T14:43:19.286Z"},
-  {"id":"1788613908668","type":"sale","productId":"1788613851205","productName":"Panipat M-31 @4891","qty":125,"user":"Piyush","note":"@4880","ts":"2026-09-05T13:11:48.668Z","editedAt":"2026-09-05T14:43:13.257Z"},
-  {"id":"1788613925330","type":"sale","productId":"1788613851205","productName":"Panipat M-31 @4891","qty":500,"user":"Piyush","note":"@4875","ts":"2026-09-05T13:12:05.330Z","editedAt":"2026-09-05T14:43:07.397Z"},
-  {"id":"1788613952085","type":"sale","productId":"1788613527366","productName":"Karnal M-31 @4902","qty":220,"user":"Piyush","note":"@4852","ts":"2026-09-05T13:12:32.085Z","editedAt":"2026-09-05T14:43:00.372Z"},
-  {"id":"1788613969586","type":"sale","productId":"1788613527366","productName":"Karnal M-31 @4902","qty":60,"user":"Piyush","note":"@4857","ts":"2026-09-05T13:12:49.586Z","editedAt":"2026-09-05T14:42:55.700Z"},
-  {"id":"1788614003948","type":"sale","productId":"1788613573796","productName":"Karnal M-31 @4857","qty":460,"user":"Piyush","note":"@4857","ts":"2026-09-05T13:13:23.948Z","editedAt":"2026-09-05T14:42:50.514Z"},
-  {"id":"1788614023775","type":"sale","productId":"1788613573796","productName":"Karnal M-31 @4857","qty":600,"user":"Piyush","note":"@4851","ts":"2026-09-05T13:13:43.775Z"},
-  {"id":"1788614496934","type":"purchase","productId":"1788613341409","productName":"SBD M-30 @4908","qty":250,"user":"Piyush","note":"@4908","ts":"2026-09-05T13:21:36.934Z"},
-  {"id":"1788614631411","type":"purchase","productId":"1788613505566","productName":"SBD S-30 @4881","qty":250,"user":"Piyush","note":"@4881","ts":"2026-09-05T13:23:51.411Z"},
-  {"id":"1788614656777","type":"purchase","productId":"1788613527366","productName":"Karnal M-31 @4902","qty":550,"user":"Piyush","note":"@4902","ts":"2026-09-05T13:24:16.777Z"},
-  {"id":"1788614684494","type":"purchase","productId":"1788613573796","productName":"Karnal M-31 @4857","qty":7500,"user":"Piyush","note":"@4857","ts":"2026-09-05T13:24:44.494Z"},
-  {"id":"1788614776472","type":"purchase","productId":"1788613851205","productName":"Panipat M-31 @4891","qty":1500,"user":"Piyush","note":"@4891","ts":"2026-09-05T13:26:16.472Z"},
-  {"id":"1788615075519","type":"sale","productId":"1788613341409","productName":"SBD M-30 @4908","qty":35,"user":"LNM","note":"@4908","ts":"2026-09-05T13:31:15.519Z"},
-  {"id":"1788615114667","type":"sale","productId":"1788613527366","productName":"Karnal M-31 @4902","qty":20,"user":"LNM","note":"@4857","ts":"2026-09-05T13:31:54.667Z"},
-  {"id":"1788615126263","type":"sale","productId":"1788613573796","productName":"Karnal M-31 @4857","qty":180,"user":"LNM","note":"@4857","ts":"2026-09-05T13:32:06.263Z","editedAt":"2026-09-05T14:26:30.340Z"}
-];
-
-// ================================================================
-//  STORAGE & STATE
+//  STORAGE & STATE INITIALIZATION
 // ================================================================
 const KEY_P = 'st_products';
 const KEY_H = 'st_history';
+const KEY_A = 'st_accounts';
+const KEY_U = 'st_user';
+const KEY_PT = 'st_parties';
 
-function loadProducts() {
+let currentUser = null; 
+
+function loadData(key, defaultData) {
   try {
-    const raw = localStorage.getItem(KEY_P);
+    const raw = localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
   } catch(e) {}
-  saveProducts(DEFAULT_PRODUCTS);
-  return [...DEFAULT_PRODUCTS];
+  saveData(key, defaultData);
+  return [...defaultData];
+}
+function saveData(key, data) {
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch(e){}
 }
 
-function saveProducts(p) {
-  try { localStorage.setItem(KEY_P, JSON.stringify(p)); } catch(e){}
-}
+const DEFAULT_ACCOUNTS = [{"id":"admin_1","name":"LNM SS","pass":"Jaisitaram","role":"admin"}];
 
-function loadHistory() {
-  try {
-    const raw = localStorage.getItem(KEY_H);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch(e) {}
-  saveHistory(DEFAULT_HISTORY);
-  return [...DEFAULT_HISTORY];
-}
+let products = loadData(KEY_P, []);
+let history  = loadData(KEY_H, []);
+let accounts = loadData(KEY_A, DEFAULT_ACCOUNTS);
+let parties  = loadData(KEY_PT, []);
 
-function saveHistory(h) {
-  try { localStorage.setItem(KEY_H, JSON.stringify(h)); } catch(e){}
-}
-
-let products = loadProducts();
-let history  = loadHistory();
 let txType   = 'sale';
 let historyFilter = 'all';
+let masterTab = 'products';
+
 let editingProductId = null;
+let editingPartyId = null;
 let editingTxId = null;
 let editTxType = 'sale';
-let deletingProductId = null;
-let deletingTxId = null;
+let deletingId = null;
+let deletingType = null;
 
 // ================================================================
-//  PWA INSTALLATION PROMPT HANDLING
+//  LOGIN & AUTH
 // ================================================================
-let deferredInstallPrompt = null;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  const btn = document.getElementById('btn-install-app');
-  if (btn) btn.style.display = 'inline-flex';
-});
-
-function triggerInstallFlow() {
-  if (deferredInstallPrompt) {
-    deferredInstallPrompt.prompt();
-    deferredInstallPrompt.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === 'accepted') {
-        showToast('🎉 StockTrack App installed!');
+function checkAuthStatus() {
+  const savedUser = localStorage.getItem(KEY_U);
+  if (savedUser) {
+    try {
+      currentUser = JSON.parse(savedUser);
+      if (accounts.find(a => a.id === currentUser.id)) {
+        document.getElementById('login-overlay').style.display = 'none';
+        updateUIForRole();
+        return true;
       }
-      deferredInstallPrompt = null;
-    });
-  } else {
-    openModal('modal-install-guide');
+    } catch(e) {}
   }
+  document.getElementById('login-overlay').style.display = 'flex';
+  return false;
+}
+
+function performLogin() {
+  const name = document.getElementById('login-name').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  if (!name || !pass) return showToast('⚠️ Please enter Name and Password.');
+  const acc = accounts.find(a => a.name.toLowerCase() === name.toLowerCase() && a.pass === pass);
+  
+  if (acc) {
+    currentUser = { id: acc.id, name: acc.name, role: acc.role };
+    localStorage.setItem(KEY_U, JSON.stringify(currentUser));
+    document.getElementById('login-overlay').style.display = 'none';
+    showToast(`Welcome back, ${acc.name}!`);
+    updateUIForRole();
+    renderRecordForm();
+  } else {
+    showToast('⚠️ Invalid Name or Password');
+  }
+}
+
+function performLogout() {
+  localStorage.removeItem(KEY_U);
+  currentUser = null;
+  document.getElementById('login-name').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-overlay').style.display = 'flex';
+}
+
+function updateUIForRole() {
+  if (!currentUser) return;
+  document.getElementById('header-user-name').textContent = currentUser.name;
+  const badge = document.getElementById('header-role-badge');
+  badge.textContent = currentUser.role.toUpperCase();
+  badge.className = 'role-badge ' + currentUser.role;
+  
+  const userNav = document.getElementById('nav-users');
+  if (currentUser.role === 'admin') {
+    userNav.style.display = 'flex';
+  } else {
+    userNav.style.display = 'none';
+    if (document.getElementById('page-users').classList.contains('active')) showPage('dashboard');
+  }
+  
+  renderHistory();
+  renderProductList();
+  renderParties();
+  renderRecordForm();
+  if (currentUser.role === 'admin') renderUsers();
 }
 
 // ================================================================
@@ -704,6 +866,7 @@ function triggerInstallFlow() {
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  
   const targetPage = document.getElementById('page-' + name);
   const targetNav  = document.getElementById('nav-'  + name);
   if (targetPage) targetPage.classList.add('active');
@@ -712,7 +875,19 @@ function showPage(name) {
   if (name === 'dashboard') renderDashboard();
   if (name === 'record')    renderRecordForm();
   if (name === 'history')   renderHistory();
-  if (name === 'products')  renderProductList();
+  if (name === 'master')    { renderProductList(); renderParties(); }
+  if (name === 'users' && currentUser?.role === 'admin') renderUsers();
+}
+
+function setMasterTab(tab) {
+  masterTab = tab;
+  document.getElementById('btn-tab-products').style.borderColor = tab === 'products' ? 'var(--gold)' : 'var(--border)';
+  document.getElementById('btn-tab-products').style.color       = tab === 'products' ? 'var(--gold)' : 'var(--text)';
+  document.getElementById('btn-tab-parties').style.borderColor  = tab === 'parties' ? 'var(--gold)' : 'var(--border)';
+  document.getElementById('btn-tab-parties').style.color        = tab === 'parties' ? 'var(--gold)' : 'var(--text)';
+  
+  document.getElementById('master-sec-products').style.display = tab === 'products' ? 'block' : 'none';
+  document.getElementById('master-sec-parties').style.display  = tab === 'parties' ? 'block' : 'none';
 }
 
 // ================================================================
@@ -725,41 +900,117 @@ function computeBalance(p) {
   return (p.opening || 0) + bought - sold;
 }
 
+function renderStockItem(p) {
+  const bal    = computeBalance(p);
+  let status   = bal < 0 ? 'critical' : bal === 0 ? 'low' : bal <= p.threshold ? 'low' : 'good';
+  
+  let deadlineHtml = '';
+  if (p.liftingBy) {
+    const today = new Date().toISOString().split('T')[0];
+    if (p.liftingBy < today && bal > 0) {
+      status = 'critical'; // Force red if past deadline and still in stock
+      deadlineHtml = `<span style="color:var(--red); font-weight:700;">(Overdue: ${p.liftingBy})</span>`;
+    } else {
+      deadlineHtml = `<span style="color:var(--text-muted);">(Clear by: ${p.liftingBy})</span>`;
+    }
+  }
+
+  const unit   = p.unit || 'units';
+  const last   = [...history].reverse().find(t => t.productId === p.id);
+  const meta   = last ? `Last: ${last.type==='sale'?'−':'+'}${last.qty} ${unit} by ${escHtml(last.user)}` : 'No transactions yet';
+  
+  return `<div class="stock-item ${status}">
+    <div class="stock-dot ${status}"></div>
+    <div class="stock-info">
+      <div class="stock-name">${escHtml(p.name)} ${deadlineHtml}</div>
+      <div class="stock-meta">${meta}</div>
+    </div>
+    <div class="stock-balance">
+      <div class="qty bal-${status}">${bal}</div>
+      <div class="unit">${unit}</div>
+    </div>
+  </div>`;
+}
+
 function renderDashboard() {
   const today  = new Date().toDateString();
   const todayT = history.filter(t => new Date(t.ts).toDateString() === today);
   const sold   = todayT.filter(t => t.type === 'sale').reduce((s, t) => s + t.qty, 0);
   const bought = todayT.filter(t => t.type === 'purchase').reduce((s, t) => s + t.qty, 0);
-  const alerts = products.filter(p => computeBalance(p) <= p.threshold).length;
+  const pendingLifts = history.filter(t => t.type === 'sale' && t.liftingDeadline && !t.isLifted).length;
 
   document.getElementById('stat-total').textContent     = products.length;
-  document.getElementById('stat-low').textContent       = alerts;
   document.getElementById('stat-sold').textContent      = sold;
   document.getElementById('stat-purchased').textContent = bought;
+  document.getElementById('stat-pending-lifts').textContent = pendingLifts;
 
-  const list = document.getElementById('stock-list');
+  const listContainer = document.getElementById('stock-list');
   if (!products.length) {
-    list.innerHTML = `<div class="empty-state"><div class="emoji">📋</div><p>No products yet.<br/>Go to <strong>Products</strong> tab to add items.</p></div>`;
+    listContainer.innerHTML = `<div class="empty-state"><div class="emoji">📋</div><p>No products yet.</p></div>`;
     return;
   }
-  list.innerHTML = products.map(p => {
-    const bal    = computeBalance(p);
-    const status = bal < 0 ? 'critical' : bal <= p.threshold ? 'low' : 'good';
-    const unit   = p.unit || 'units';
-    const last   = [...history].reverse().find(t => t.productId === p.id);
-    const meta   = last ? `Last: ${last.type==='sale'?'−':'+'}${last.qty} ${unit} by ${escHtml(last.user)}` : 'No transactions yet';
-    return `<div class="stock-item ${status}">
-      <div class="stock-dot ${status}"></div>
-      <div class="stock-info">
-        <div class="stock-name">${escHtml(p.name)}</div>
-        <div class="stock-meta">${meta}</div>
+
+  const activeProducts = [], zeroProducts = [];
+  products.forEach(p => computeBalance(p) === 0 ? zeroProducts.push(p) : activeProducts.push(p));
+
+  let html = activeProducts.map(renderStockItem).join('');
+  if (zeroProducts.length > 0) {
+    html += `
+      <div class="zero-balance-header" onclick="document.getElementById('zero-stock-list').style.display = document.getElementById('zero-stock-list').style.display === 'none' ? 'block' : 'none';">
+        Zero Balance Stock Items (${zeroProducts.length}) <span>▼</span>
       </div>
-      <div class="stock-balance">
-        <div class="qty bal-${status}">${bal}</div>
-        <div class="unit">${unit}</div>
+      <div id="zero-stock-list" style="display:none;">${zeroProducts.map(renderStockItem).join('')}</div>
+    `;
+  }
+  listContainer.innerHTML = html;
+}
+
+// ================================================================
+//  PENDING LIFTS MODAL
+// ================================================================
+function openPendingLiftsModal() {
+  renderPendingLifts();
+  openModal('modal-pending-lifts');
+}
+
+function renderPendingLifts() {
+  const pending = history.filter(t => t.type === 'sale' && t.liftingDeadline && !t.isLifted);
+  const list = document.getElementById('pending-lifts-list');
+  if (!pending.length) {
+    list.innerHTML = `<div class="empty-state" style="padding:20px 0;"><p>All clear! No pending lifts.</p></div>`;
+    return;
+  }
+  
+  list.innerHTML = pending.map(t => {
+    const unit = (products.find(p => p.id === t.productId) || {}).unit || 'units';
+    const isOverdue = t.liftingDeadline < new Date().toISOString().split('T')[0];
+    const dateColor = isOverdue ? 'var(--red)' : 'var(--amber)';
+    return `
+      <div class="master-item">
+        <div class="master-info">
+          <div class="master-name">${escHtml(t.productName)} <span style="font-size:12px;color:var(--text-muted);font-weight:400">(${t.qty} ${unit})</span></div>
+          <div class="master-detail">Party: <strong style="color:var(--text)">${escHtml(t.party || 'N/A')}</strong></div>
+          <div class="master-detail" style="color:${dateColor}">Deadline: ${t.liftingDeadline}</div>
+        </div>
+        <div class="master-actions">
+          <button class="icon-btn check" onclick="markLifted('${t.id}')" title="Mark Lifted">✔️</button>
+        </div>
       </div>
-    </div>`;
+    `;
   }).join('');
+}
+
+function markLifted(id) {
+  const tx = history.find(t => t.id === id);
+  if (tx) {
+    tx.isLifted = true;
+    tx.liftedAt = new Date().toISOString();
+    saveData(KEY_H, history);
+    renderPendingLifts();
+    renderDashboard();
+    renderHistory();
+    showToast('🚚 Marked as Lifted!');
+  }
 }
 
 // ================================================================
@@ -769,9 +1020,21 @@ function setType(type) {
   txType = type;
   document.getElementById('btn-type-sale').classList.toggle('active', type === 'sale');
   document.getElementById('btn-type-purchase').classList.toggle('active', type === 'purchase');
+  
   const btn = document.getElementById('submit-btn');
   btn.textContent = type === 'sale' ? 'Record Sale' : 'Record Purchase';
   btn.className   = 'btn btn-' + type;
+  
+  document.getElementById('lbl-rec-party').textContent = type === 'sale' ? 'Sale To' : 'Purchase From';
+  document.getElementById('group-rec-lift-date').style.display = type === 'sale' ? 'block' : 'none';
+}
+
+function updatePartyDatalist() {
+  const dl = document.getElementById('party-list');
+  dl.innerHTML = parties.map(p => {
+    const display = p.nick ? `${p.nick} (${p.city})` : `(${p.city})`;
+    return `<option value="${p.name}">${display}</option>`;
+  }).join('');
 }
 
 function renderRecordForm() {
@@ -779,20 +1042,35 @@ function renderRecordForm() {
   sel.innerHTML = products.length
     ? products.map(p => `<option value="${p.id}">${escHtml(p.name)} (${computeBalance(p)} ${p.unit||'units'})</option>`).join('')
     : '<option disabled selected>— Add products first —</option>';
+  
+  updatePartyDatalist();
+  setType(txType);
 }
 
 function recordTransaction() {
   const productId = document.getElementById('rec-product').value;
   const qty       = parseInt(document.getElementById('rec-qty').value);
-  const user      = document.getElementById('rec-user').value.trim();
+  const party     = document.getElementById('rec-party').value.trim();
   const note      = document.getElementById('rec-note').value.trim();
+  const liftDate  = document.getElementById('rec-lift-date').value;
+  const user      = currentUser ? currentUser.name : 'Unknown';
+  
   if (!productId)  return showToast('⚠️ Please select a product.');
   if (!qty || qty < 1) return showToast('⚠️ Enter a valid quantity.');
-  if (!user)       return showToast('⚠️ Please enter your name.');
 
   const product = products.find(p => p.id === productId);
   if (txType === 'sale' && qty > computeBalance(product)) {
     return showToast(`⚠️ Only ${computeBalance(product)} ${product.unit||'units'} available!`);
+  }
+
+  if (party) {
+    const partyExists = parties.some(p => p.name.toLowerCase() === party.toLowerCase());
+    if (!partyExists) {
+      parties.push({ id: Date.now().toString(), name: party, nick: '', city: '', mobile: '' });
+      saveData(KEY_PT, parties);
+      updatePartyDatalist();
+      renderParties();
+    }
   }
 
   history.push({
@@ -801,14 +1079,19 @@ function recordTransaction() {
     productId,
     productName: product.name,
     qty,
-    user,
+    party,
     note,
+    user,
+    liftingDeadline: (txType === 'sale' && liftDate) ? liftDate : null,
+    isLifted: (txType === 'sale' && liftDate) ? false : true, // If no deadline, assumed physically cleared
     ts: new Date().toISOString()
   });
 
-  saveHistory(history);
+  saveData(KEY_H, history);
   document.getElementById('rec-qty').value = '';
   document.getElementById('rec-note').value = '';
+  document.getElementById('rec-party').value = '';
+  document.getElementById('rec-lift-date').value = '';
   showToast(txType === 'sale' ? '🛒 Sale recorded!' : '📥 Purchase recorded!');
   renderRecordForm();
 }
@@ -816,53 +1099,98 @@ function recordTransaction() {
 // ================================================================
 //  HISTORY
 // ================================================================
-function setFilter(el, filter) {
+function setFilter(filter) {
   historyFilter = filter;
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
+  document.getElementById('chip-filter-' + filter).classList.add('active');
   renderHistory();
 }
 
-function renderHistory() {
+function setHistoryRange(days) {
+  const fromEl = document.getElementById('hist-from');
+  const toEl = document.getElementById('hist-to');
+  if (days === null) {
+    fromEl.value = ''; toEl.value = '';
+  } else {
+    const today = new Date();
+    toEl.value = today.toISOString().split('T')[0];
+    const from = new Date(today.getTime() - (days * 24 * 60 * 60 * 1000));
+    fromEl.value = from.toISOString().split('T')[0];
+  }
+  renderHistory();
+}
+
+function getFilteredHistory() {
   let txs = [...history].reverse();
   if (historyFilter !== 'all') txs = txs.filter(t => t.type === historyFilter);
+  
+  const fromD = document.getElementById('hist-from').value;
+  const toD   = document.getElementById('hist-to').value;
+  const limit = document.getElementById('hist-limit').value;
+
+  if (fromD) txs = txs.filter(t => t.ts >= fromD);
+  if (toD)   txs = txs.filter(t => t.ts <= toD + 'T23:59:59');
+  if (limit !== 'all') txs = txs.slice(0, parseInt(limit));
+  
+  return txs;
+}
+
+function renderHistory() {
+  const txs = getFilteredHistory();
   const list = document.getElementById('history-list');
   if (!txs.length) {
     list.innerHTML = `<div class="empty-state"><div class="emoji">🕒</div><p>No transactions found.</p></div>`;
     return;
   }
+  
   list.innerHTML = txs.map(t => {
     const d    = new Date(t.ts);
     const ds   = d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
     const ts   = d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
     const emoji= t.type === 'sale' ? '🛒' : '📥';
     const unit = (products.find(p => p.id === t.productId) || {unit:''}).unit || 'units';
-    return `<div class="tx-item">
-      <div class="tx-badge ${t.type}">${emoji}</div>
-      <div class="tx-info">
-        <div class="tx-product">${escHtml(t.productName)}</div>
-        <div class="tx-meta">${ds} ${ts} · by ${escHtml(t.user)}${t.note ? ' · ' + escHtml(t.note) : ''}</div>
-      </div>
-      <div class="tx-right">
-        <div class="tx-amount ${t.type}"><div class="qty">${t.qty}</div><div class="unit">${unit}</div></div>
+    
+    let actionHtml = '';
+    if (currentUser && currentUser.role === 'admin') {
+      actionHtml = `
         <div class="tx-actions">
           <button class="icon-btn edit" onclick="openEditTx('${t.id}')"   title="Edit">✏️</button>
           <button class="icon-btn del"  onclick="openDeleteTx('${t.id}')" title="Delete">🗑️</button>
         </div>
+      `;
+    }
+    
+    let partyHtml = t.party ? ` · Party: ${escHtml(t.party)}` : '';
+    let liftHtml = '';
+    if (t.type === 'sale' && t.liftingDeadline) {
+      if (t.isLifted) liftHtml = ` <span style="color:var(--green)">[Lifted: ${t.liftedAt.split('T')[0]}]</span>`;
+      else liftHtml = ` <span style="color:var(--red)">[Pending Lift: ${t.liftingDeadline}]</span>`;
+    }
+
+    return `<div class="tx-item">
+      <div class="tx-badge ${t.type}">${emoji}</div>
+      <div class="tx-info">
+        <div class="tx-product">${escHtml(t.productName)}</div>
+        <div class="tx-meta">${ds} ${ts} · by ${escHtml(t.user)}${partyHtml}</div>
+        <div class="tx-meta">${t.note ? 'Note: ' + escHtml(t.note) : ''}${liftHtml}</div>
+      </div>
+      <div class="tx-right">
+        <div class="tx-amount ${t.type}"><div class="qty">${t.qty}</div><div class="unit">${unit}</div></div>
+        ${actionHtml}
       </div>
     </div>`;
   }).join('');
 }
 
+// Transaction Edit/Delete Logic
 function openDeleteTx(id) {
   deletingTxId = id;
   openModal('modal-del-tx');
   document.getElementById('confirm-del-tx').onclick = () => {
     history = history.filter(t => t.id !== deletingTxId);
-    saveHistory(history);
-    closeModal('modal-del-tx');
-    showToast('🗑️ Transaction deleted.');
-    renderHistory();
+    saveData(KEY_H, history);
+    closeModal('modal-del-tx'); showToast('🗑️ Transaction deleted.');
+    renderHistory(); renderDashboard();
   };
 }
 
@@ -870,15 +1198,16 @@ function openEditTx(id) {
   const tx = history.find(t => t.id === id);
   if (!tx) return;
   editingTxId = id; editTxType = tx.type;
+  
   const sel = document.getElementById('edit-tx-product');
-  sel.innerHTML = products.length
-    ? products.map(p => `<option value="${p.id}" ${p.id===tx.productId?'selected':''}>${escHtml(p.name)}</option>`).join('')
-    : '<option disabled>No products</option>';
+  sel.innerHTML = products.map(p => `<option value="${p.id}" ${p.id===tx.productId?'selected':''}>${escHtml(p.name)}</option>`).join('');
+  
   document.getElementById('edit-tx-qty').value  = tx.qty;
-  document.getElementById('edit-tx-user').value = tx.user;
+  document.getElementById('edit-tx-party').value = tx.party || '';
+  document.getElementById('edit-tx-lift-date').value = tx.liftingDeadline || '';
   document.getElementById('edit-tx-note').value = tx.note || '';
-  document.getElementById('edit-btn-sale').classList.toggle('active', tx.type === 'sale');
-  document.getElementById('edit-btn-purchase').classList.toggle('active', tx.type === 'purchase');
+  
+  setEditType(tx.type);
   openModal('modal-edit-tx');
 }
 
@@ -886,351 +1215,349 @@ function setEditType(type) {
   editTxType = type;
   document.getElementById('edit-btn-sale').classList.toggle('active', type === 'sale');
   document.getElementById('edit-btn-purchase').classList.toggle('active', type === 'purchase');
+  document.getElementById('group-edit-tx-lift-date').style.display = type === 'sale' ? 'block' : 'none';
 }
 
 function saveEditTx() {
   const qty       = parseInt(document.getElementById('edit-tx-qty').value);
-  const user      = document.getElementById('edit-tx-user').value.trim();
+  const party     = document.getElementById('edit-tx-party').value.trim();
+  const liftDate  = document.getElementById('edit-tx-lift-date').value;
   const note      = document.getElementById('edit-tx-note').value.trim();
   const productId = document.getElementById('edit-tx-product').value;
   if (!qty || qty < 1) return showToast('⚠️ Enter a valid quantity.');
-  if (!user)       return showToast('⚠️ Enter your name.');
 
   const product = products.find(p => p.id === productId);
   const idx = history.findIndex(t => t.id === editingTxId);
   if (idx === -1) return;
+  
   history[idx] = {
-    ...history[idx],
-    type: editTxType,
-    productId,
+    ...history[idx], type: editTxType, productId,
     productName: product ? product.name : history[idx].productName,
-    qty,
-    user,
-    note,
+    qty, party, note,
+    liftingDeadline: (editTxType === 'sale' && liftDate) ? liftDate : null,
     editedAt: new Date().toISOString()
   };
-  saveHistory(history);
-  closeModal('modal-edit-tx');
-  showToast('✅ Transaction updated!');
-  renderHistory();
+  // If editing removed the deadline, assume lifted. If deadline added/changed, pending.
+  if (editTxType === 'sale' && liftDate && !history[idx].liftedAt) history[idx].isLifted = false;
+  else if (!liftDate) history[idx].isLifted = true;
+
+  saveData(KEY_H, history); closeModal('modal-edit-tx');
+  showToast('✅ Transaction updated!'); renderHistory(); renderDashboard();
 }
 
 // ================================================================
-//  PRODUCTS
+//  MASTER DATA (Products)
 // ================================================================
 function saveProduct() {
   const name      = document.getElementById('p-name').value.trim();
   const opening   = parseInt(document.getElementById('p-opening').value) || 0;
   const threshold = parseInt(document.getElementById('p-threshold').value) || 10;
   const unit      = document.getElementById('p-unit').value.trim();
+  const liftingBy = document.getElementById('p-lift-by').value;
   if (!name) return showToast('⚠️ Product name is required.');
 
   if (editingProductId) {
+    if (currentUser?.role !== 'admin') return showToast('⚠️ Admin rights required.');
     const idx = products.findIndex(p => p.id === editingProductId);
     if (idx === -1) return;
-    const oldName = products[idx].name;
-    if (oldName !== name) {
+    if (products[idx].name !== name) {
       history.forEach(t => { if (t.productId === editingProductId) t.productName = name; });
-      saveHistory(history);
+      saveData(KEY_H, history);
     }
-    products[idx] = { ...products[idx], name, opening, threshold, unit };
-    saveProducts(products);
-    cancelProductEdit();
-    showToast('✅ Product updated!');
+    products[idx] = { ...products[idx], name, opening, threshold, unit, liftingBy };
+    saveData(KEY_P, products); cancelProductEdit(); showToast('✅ Product updated!');
   } else {
-    if (products.find(p => p.name.toLowerCase() === name.toLowerCase())) {
-      return showToast('⚠️ Product already exists.');
-    }
-    products.push({ id: Date.now().toString(), name, opening, threshold, unit });
-    saveProducts(products);
-    clearProductForm();
-    showToast('✅ Product added!');
+    if (products.find(p => p.name.toLowerCase() === name.toLowerCase())) return showToast('⚠️ Product already exists.');
+    products.push({ id: Date.now().toString(), name, opening, threshold, unit, liftingBy });
+    saveData(KEY_P, products); clearProductForm(); showToast('✅ Product added!');
   }
   renderProductList();
 }
 
 function editProduct(id) {
-  const p = products.find(p => p.id === id);
-  if (!p) return;
+  if (currentUser?.role !== 'admin') return showToast('⚠️ Admin required.');
+  const p = products.find(p => p.id === id); if (!p) return;
   editingProductId = id;
   document.getElementById('p-name').value      = p.name;
   document.getElementById('p-opening').value   = p.opening;
   document.getElementById('p-threshold').value = p.threshold;
   document.getElementById('p-unit').value      = p.unit || '';
-  document.getElementById('product-form-title').textContent        = '✏️ Edit Product';
-  document.getElementById('btn-save-product').textContent          = 'Update Product';
+  document.getElementById('p-lift-by').value   = p.liftingBy || '';
+  document.getElementById('product-form-title').textContent = '✏️ Edit Product';
+  document.getElementById('btn-save-product').textContent   = 'Update Product';
   document.getElementById('btn-cancel-product-edit').style.display = '';
   document.getElementById('product-form-card').classList.add('editing');
   document.getElementById('product-form-card').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function cancelProductEdit() {
-  editingProductId = null;
-  clearProductForm();
-  document.getElementById('product-form-title').textContent        = '➕ Add New Product';
-  document.getElementById('btn-save-product').textContent          = 'Add Product';
+  editingProductId = null; clearProductForm();
+  document.getElementById('product-form-title').textContent = '➕ Add New Product';
+  document.getElementById('btn-save-product').textContent   = 'Add Product';
   document.getElementById('btn-cancel-product-edit').style.display = 'none';
   document.getElementById('product-form-card').classList.remove('editing');
 }
 
 function clearProductForm() {
-  ['p-name', 'p-opening', 'p-threshold', 'p-unit'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
+  ['p-name', 'p-opening', 'p-threshold', 'p-unit', 'p-lift-by'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
   });
-}
-
-function openDeleteProduct(id) {
-  deletingProductId = id;
-  const p = products.find(p => p.id === id);
-  document.getElementById('msg-del-product').textContent = `Delete "${p ? p.name : ''}"?`;
-  openModal('modal-del-product');
-  document.getElementById('confirm-del-product').onclick = () => {
-    products = products.filter(p => p.id !== deletingProductId);
-    saveProducts(products);
-    if (editingProductId === deletingProductId) cancelProductEdit();
-    closeModal('modal-del-product');
-    showToast('🗑️ Product deleted.');
-    renderProductList();
-  };
 }
 
 function renderProductList() {
   const list = document.getElementById('product-list');
-  if (!products.length) {
-    list.innerHTML = `<div class="empty-state"><div class="emoji">📭</div><p>No products added yet.</p></div>`;
-    return;
-  }
+  if (!products.length) { list.innerHTML = `<div class="empty-state"><div class="emoji">📭</div><p>No products added yet.</p></div>`; return; }
+  
   list.innerHTML = products.map(p => {
     const bal = computeBalance(p);
-    return `<div class="product-item">
-      <div class="product-info">
-        <div class="product-name">${escHtml(p.name)}</div>
-        <div class="product-detail">Opening: ${p.opening} · Alert at: ${p.threshold} · Unit: ${p.unit||'—'}</div>
-        <div class="product-detail" style="color:var(--primary);margin-top:4px;font-weight:600">Current Balance: ${bal} ${p.unit||'units'}</div>
-      </div>
-      <div class="product-actions">
-        <button class="icon-btn edit" onclick="editProduct('${p.id}')"        title="Edit">✏️</button>
-        <button class="icon-btn del"  onclick="openDeleteProduct('${p.id}')"  title="Delete">🗑️</button>
-      </div>
+    let actionHtml = '';
+    if (currentUser?.role === 'admin') {
+      actionHtml = `<div class="master-actions">
+        <button class="icon-btn edit" onclick="editProduct('${p.id}')">✏️</button>
+        <button class="icon-btn del"  onclick="openDelete('product', '${p.id}')">🗑️</button>
+      </div>`;
+    }
+    const liftStr = p.liftingBy ? ` · Clear By: <strong style="color:var(--text)">${p.liftingBy}</strong>` : '';
+    return `<div class="master-item">
+      <div class="master-info">
+        <div class="master-name">${escHtml(p.name)}</div>
+        <div class="master-detail">Opening: ${p.opening} · Alert at: ${p.threshold} · Unit: ${p.unit||'—'}${liftStr}</div>
+        <div class="master-detail" style="color:var(--gold);margin-top:4px;font-weight:600">Current Balance: ${bal} ${p.unit||'units'}</div>
+      </div>${actionHtml}
     </div>`;
   }).join('');
 }
 
 // ================================================================
-//  EXCEL EXPORT (3 SHEETS VIA SHEETJS)
+//  MASTER DATA (Parties)
+// ================================================================
+function saveParty() {
+  const name   = document.getElementById('pt-name').value.trim();
+  const nick   = document.getElementById('pt-nick').value.trim();
+  const city   = document.getElementById('pt-city').value.trim();
+  const mobile = document.getElementById('pt-mobile').value.trim();
+  if (!name || !city) return showToast('⚠️ Party Name and City are required.');
+
+  if (editingPartyId) {
+    if (currentUser?.role !== 'admin') return showToast('⚠️ Admin rights required.');
+    const idx = parties.findIndex(p => p.id === editingPartyId);
+    if (idx === -1) return;
+    parties[idx] = { ...parties[idx], name, nick, city, mobile };
+    saveData(KEY_PT, parties); cancelPartyEdit(); showToast('✅ Party updated!');
+  } else {
+    parties.push({ id: Date.now().toString(), name, nick, city, mobile });
+    saveData(KEY_PT, parties); clearPartyForm(); showToast('✅ Party added!');
+  }
+  updatePartyDatalist();
+  renderParties();
+}
+
+function editParty(id) {
+  if (currentUser?.role !== 'admin') return showToast('⚠️ Admin required.');
+  const p = parties.find(p => p.id === id); if (!p) return;
+  editingPartyId = id;
+  document.getElementById('pt-name').value   = p.name;
+  document.getElementById('pt-nick').value   = p.nick || '';
+  document.getElementById('pt-city').value   = p.city;
+  document.getElementById('pt-mobile').value = p.mobile || '';
+  document.getElementById('party-form-title').textContent = '✏️ Edit Party';
+  document.getElementById('btn-save-party').textContent   = 'Update Party';
+  document.getElementById('btn-cancel-party-edit').style.display = '';
+  document.getElementById('party-form-card').classList.add('editing');
+  document.getElementById('party-form-card').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function cancelPartyEdit() {
+  editingPartyId = null; clearPartyForm();
+  document.getElementById('party-form-title').textContent = '➕ Add New Party';
+  document.getElementById('btn-save-party').textContent   = 'Add Party';
+  document.getElementById('btn-cancel-party-edit').style.display = 'none';
+  document.getElementById('party-form-card').classList.remove('editing');
+}
+
+function clearPartyForm() {
+  ['pt-name', 'pt-nick', 'pt-city', 'pt-mobile'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+}
+
+function renderParties() {
+  const list = document.getElementById('party-list-display');
+  if (!parties.length) { list.innerHTML = `<div class="empty-state"><div class="emoji">🏢</div><p>No parties added yet.</p></div>`; return; }
+  
+  list.innerHTML = parties.map(p => {
+    let actionHtml = '';
+    if (currentUser?.role === 'admin') {
+      actionHtml = `<div class="master-actions">
+        <button class="icon-btn edit" onclick="editParty('${p.id}')">✏️</button>
+        <button class="icon-btn del"  onclick="openDelete('party', '${p.id}')">🗑️</button>
+      </div>`;
+    }
+    const nickStr = p.nick ? ` (${escHtml(p.nick)})` : '';
+    const mobStr  = p.mobile ? ` · 📞 ${escHtml(p.mobile)}` : '';
+    return `<div class="master-item">
+      <div class="master-info">
+        <div class="master-name">${escHtml(p.name)}${nickStr}</div>
+        <div class="master-detail">🏙️ ${escHtml(p.city)}${mobStr}</div>
+      </div>${actionHtml}
+    </div>`;
+  }).join('');
+}
+
+// Master Delete Handler
+function openDelete(type, id) {
+  if (currentUser?.role !== 'admin') return showToast('⚠️ Admin rights required.');
+  deletingType = type; deletingId = id;
+  const item = type === 'product' ? products.find(p=>p.id===id) : parties.find(p=>p.id===id);
+  document.getElementById('msg-del-master').textContent = `Delete "${item ? item.name : ''}"?`;
+  openModal('modal-del-master');
+  document.getElementById('confirm-del-master').onclick = () => {
+    if (deletingType === 'product') {
+      products = products.filter(p => p.id !== deletingId);
+      saveData(KEY_P, products);
+      if (editingProductId === deletingId) cancelProductEdit();
+      renderProductList();
+    } else {
+      parties = parties.filter(p => p.id !== deletingId);
+      saveData(KEY_PT, parties);
+      if (editingPartyId === deletingId) cancelPartyEdit();
+      updatePartyDatalist(); renderParties();
+    }
+    closeModal('modal-del-master'); showToast(`🗑️ ${deletingType} deleted.`);
+  };
+}
+
+
+// ================================================================
+//  EXCEL EXPORT (Respects History Filters)
 // ================================================================
 let _xlsxLoading = false;
 function ensureXLSX(callback) {
   if (window.XLSX) { callback(); return; }
   if (_xlsxLoading) { setTimeout(() => ensureXLSX(callback), 150); return; }
-  _xlsxLoading = true;
-  showToast('⏳ Loading Excel engine…', 5000);
+  _xlsxLoading = true; showToast('⏳ Loading Excel engine…', 5000);
   const s = document.createElement('script');
   s.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
   s.onload  = () => { _xlsxLoading = false; callback(); };
-  s.onerror = () => { _xlsxLoading = false; exportCSVFallback(); };
+  s.onerror = () => { _xlsxLoading = false; showToast('⚠️ Error loading Excel'); };
   document.head.appendChild(s);
 }
 
 function exportXLSX() {
-  if (!history.length && !products.length) return showToast('⚠️ No data to export.');
-  ensureXLSX(buildAndDownloadXLSX);
+  const filteredTxs = getFilteredHistory();
+  if (!filteredTxs.length && !products.length) return showToast('⚠️ No data to export in current filter.');
+  ensureXLSX(() => buildAndDownloadXLSX(filteredTxs));
 }
 
-function buildAndDownloadXLSX() {
-  const wb    = XLSX.utils.book_new();
+function buildAndDownloadXLSX(filteredTxs) {
+  const wb = XLSX.utils.book_new();
   const today = new Date().toLocaleDateString('en-IN').replace(/\//g,'-');
 
-  // Sheet 1: All Transactions
-  const s1 = [['Date','Time','Type','Product','Quantity','Unit','User','Note']];
-  [...history].reverse().forEach(t => {
-    const d    = new Date(t.ts);
+  // SHEET 1: All Transactions
+  const s1 = [['Date','Time','User','Type','Product','Qty','Unit','Party','Note','Lift Status','Lift Date/Deadline']];
+  filteredTxs.forEach(t => {
+    const d = new Date(t.ts);
     const unit = (products.find(p => p.id === t.productId) || {unit:''}).unit || 'units';
+    let liftStatus = 'N/A';
+    let liftDate = '';
+    if (t.type === 'sale' && t.liftingDeadline) {
+      liftStatus = t.isLifted ? 'Completed' : 'Pending';
+      liftDate   = t.isLifted ? t.liftedAt.split('T')[0] : t.liftingDeadline;
+    }
     s1.push([
-      d.toLocaleDateString('en-IN'),
-      d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}),
-      t.type.charAt(0).toUpperCase() + t.type.slice(1),
-      t.productName, t.qty, unit, t.user, t.note || ''
+      d.toLocaleDateString('en-IN'), d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}),
+      t.user, t.type.charAt(0).toUpperCase() + t.type.slice(1),
+      t.productName, t.qty, unit, t.party || '', t.note || '', liftStatus, liftDate
     ]);
   });
   const ws1 = XLSX.utils.aoa_to_sheet(s1);
-  ws1['!cols'] = [12,8,10,24,10,8,14,24].map(w => ({wch:w}));
+  ws1['!cols'] = [12,8,12,10,24,8,8,20,25,12,18].map(w => ({wch:w}));
   XLSX.utils.book_append_sheet(wb, ws1, 'All Transactions');
 
-  // Sheet 2: Product Summary
-  const s2 = [['Product','Unit','Opening Stock','Total Purchased','Total Sold','Current Balance','Low Stock Alert','Status']];
+  // SHEET 2: Product Summary
+  const s2 = [['Product','Unit','Opening','Purchased','Sold','Balance','Low Alert','Product Deadline','Status']];
   products.forEach(p => {
+    // Note: Summary uses ALL history to calculate true balance, not just filtered history
     const txs    = history.filter(t => t.productId === p.id);
     const bought = txs.filter(t => t.type === 'purchase').reduce((s, t) => s + t.qty, 0);
     const sold   = txs.filter(t => t.type === 'sale').reduce((s, t) => s + t.qty, 0);
     const bal    = (p.opening || 0) + bought - sold;
-    const status = bal < 0 ? 'Critical' : bal <= p.threshold ? 'Low' : 'OK';
-    s2.push([p.name, p.unit||'units', p.opening||0, bought, sold, bal, p.threshold, status]);
+    let status   = bal < 0 ? 'Critical' : bal <= p.threshold ? 'Low' : 'OK';
+    if (p.liftingBy && p.liftingBy < new Date().toISOString().split('T')[0] && bal > 0) status = 'Overdue';
+    s2.push([p.name, p.unit||'units', p.opening||0, bought, sold, bal, p.threshold, p.liftingBy||'', status]);
   });
   const ws2 = XLSX.utils.aoa_to_sheet(s2);
-  ws2['!cols'] = [24,8,14,16,12,16,14,12].map(w => ({wch:w}));
+  ws2['!cols'] = [24,8,10,12,10,12,10,18,10].map(w => ({wch:w}));
   XLSX.utils.book_append_sheet(wb, ws2, 'Product Summary');
 
-  // Sheet 3: By Product
+  // SHEET 3: By Product (Filtered)
   const s3 = [];
   products.forEach(p => {
-    const txs = history.filter(t => t.productId === p.id).sort((a,b) => new Date(a.ts) - new Date(b.ts));
+    const pTxs = filteredTxs.filter(t => t.productId === p.id).sort((a,b) => new Date(a.ts) - new Date(b.ts));
+    if (!pTxs.length) return; // Skip products with no transactions in this date range
     const unit = p.unit || 'units';
-    s3.push([p.name.toUpperCase() + ' (' + unit + ')', '', '', '', '', '', '']);
-    s3.push(['Date','Time','Type','Quantity','User','Note','Running Balance']);
-    let running = p.opening || 0;
-    txs.forEach(t => {
+    s3.push([p.name.toUpperCase() + ' (' + unit + ')', '', '', '', '', '', '', '']);
+    s3.push(['Date','Time','User','Type','Qty','Party','Note','Lift Status','Running Bal']);
+    
+    // Calculate running balance up to the start of the filter
+    const earlierTxs = history.filter(t => t.productId === p.id && t.ts < (pTxs[0] ? pTxs[0].ts : '9999'));
+    let running = (p.opening || 0) + 
+      earlierTxs.filter(t=>t.type==='purchase').reduce((s,t)=>s+t.qty,0) -
+      earlierTxs.filter(t=>t.type==='sale').reduce((s,t)=>s+t.qty,0);
+    
+    s3.push(['(Prior Balance)','','','','','','','', running]);
+
+    pTxs.forEach(t => {
       const d = new Date(t.ts);
       running += t.type === 'purchase' ? t.qty : -t.qty;
+      let liftStatus = 'N/A';
+      if (t.type === 'sale' && t.liftingDeadline) liftStatus = t.isLifted ? 'Completed' : 'Pending';
       s3.push([
-        d.toLocaleDateString('en-IN'),
-        d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}),
-        t.type === 'purchase' ? 'Purchase' : 'Sale',
-        t.type === 'purchase' ? t.qty : -t.qty,
-        t.user, t.note || '', running
+        d.toLocaleDateString('en-IN'), d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}),
+        t.user, t.type === 'purchase' ? 'Purchase' : 'Sale',
+        t.type === 'purchase' ? t.qty : -t.qty, t.party || '', t.note || '', liftStatus, running
       ]);
     });
-    const bought = txs.filter(t => t.type === 'purchase').reduce((s, t) => s + t.qty, 0);
-    const sold   = txs.filter(t => t.type === 'sale').reduce((s, t) => s + t.qty, 0);
-    s3.push(['Subtotal','','','Purchased: '+bought+' | Sold: '+sold,'','','Balance: '+computeBalance(p)+' '+unit]);
     s3.push([]);
   });
   const ws3 = XLSX.utils.aoa_to_sheet(s3);
-  ws3['!cols'] = [14,8,10,12,14,24,16].map(w => ({wch:w}));
+  ws3['!cols'] = [12,8,12,10,10,20,25,12,14].map(w => ({wch:w}));
   XLSX.utils.book_append_sheet(wb, ws3, 'By Product');
 
   XLSX.writeFile(wb, 'StockTrack_' + today + '.xlsx');
-  showToast('📊 Excel downloaded! (3 sheets)');
-}
-
-function exportCSVFallback() {
-  if (!history.length) return;
-  const rows = [['Date','Time','Type','Product','Quantity','Unit','User','Note']];
-  [...history].reverse().forEach(t => {
-    const d    = new Date(t.ts);
-    const unit = (products.find(p => p.id === t.productId) || {unit:''}).unit || 'units';
-    rows.push([
-      d.toLocaleDateString('en-IN'),
-      d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}),
-      t.type.charAt(0).toUpperCase() + t.type.slice(1),
-      t.productName, t.qty, unit, t.user, t.note || ''
-    ]);
-  });
-  const csv  = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
-  const blob = new Blob([csv], {type: 'text/csv'});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = 'StockTrack_' + new Date().toLocaleDateString('en-IN').replace(/\//g,'-') + '.csv';
-  a.click();
-  URL.revokeObjectURL(url);
+  showToast('📊 Excel downloaded! (Filtered View)');
 }
 
 // ================================================================
 //  DATA EXPORT & IMPORT (JSON / HTML)
 // ================================================================
 function exportDataJSON() {
-  if (!products.length && !history.length) return showToast('⚠️ No data to export.');
-  const data = {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    products: products,
-    history: history
-  };
+  const data = { version: 3, exportedAt: new Date().toISOString(), products, history, accounts, parties };
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], {type: 'application/json;charset=utf-8'});
-  const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  const d    = new Date();
-  const dateStr = d.getDate() + '-' + (d.getMonth()+1) + '-' + d.getFullYear();
-  a.href     = url;
-  a.download = 'StockTrack_Data_' + dateStr + '.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('📤 Data file exported! Share via WhatsApp.');
+  a.href     = URL.createObjectURL(blob);
+  a.download = 'StockTrack_Data_' + new Date().toISOString().split('T')[0] + '.json';
+  a.click(); showToast('📤 Data file exported! Share via WhatsApp.');
 }
 
-function triggerImportDialog() {
-  const input = document.getElementById('app-file-importer');
-  if (input) {
-    input.value = '';
-    input.click();
-  }
-}
+function triggerImportDialog() { document.getElementById('app-file-importer').click(); }
 
 function handleFileImport(event) {
-  const file = event.target.files && event.target.files[0];
-  if (!file) return;
-
+  const file = event.target.files && event.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = function(ev) {
-    const content = ev.target.result;
-    let importedProds = null;
-    let importedHist  = null;
-
-    // 1. Try parsing as JSON
     try {
-      const data = JSON.parse(content);
-      if (Array.isArray(data.products)) importedProds = data.products;
-      if (Array.isArray(data.history))  importedHist  = data.history;
-    } catch(err) {
-      // 2. Fallback: Try extracting from shared HTML file
-      try {
-        const match = content.match(/window\.__sharedExport\s*=\s*(\{[\s\S]*?\});/);
-        if (match && match[1]) {
-          const sharedData = JSON.parse(match[1]);
-          if (Array.isArray(sharedData.products)) importedProds = sharedData.products;
-          if (Array.isArray(sharedData.history))  importedHist  = sharedData.history;
-        }
-      } catch(e2) {}
-    }
-
-    if (!importedProds && !importedHist) {
-      return showToast('⚠️ Could not read file. Make sure it is a StockTrack .json file.');
-    }
-
-    // Merge strategy: update or add products, add new transaction history by unique ID
-    let addedProdsCount = 0;
-    let addedTxsCount   = 0;
-
-    if (importedProds && importedProds.length > 0) {
-      importedProds.forEach(np => {
-        const existingIdx = products.findIndex(p => p.id === np.id || p.name.toLowerCase() === np.name.toLowerCase());
-        if (existingIdx >= 0) {
-          products[existingIdx] = { ...products[existingIdx], ...np };
-        } else {
-          products.push(np);
-          addedProdsCount++;
-        }
-      });
-      saveProducts(products);
-    }
-
-    if (importedHist && importedHist.length > 0) {
-      importedHist.forEach(nt => {
-        const exists = history.some(h => h.id === nt.id);
-        if (!exists) {
-          history.push(nt);
-          addedTxsCount++;
-        }
-      });
-      saveHistory(history);
-    }
-
-    // Refresh UI
-    renderDashboard();
-    renderHistory();
-    renderProductList();
-    renderRecordForm();
-
-    showToast(`✅ Loaded ${products.length} products & ${history.length} transactions!`);
+      const data = JSON.parse(ev.target.result);
+      if (data.products) { data.products.forEach(np => { const idx = products.findIndex(p => p.id === np.id); if (idx >= 0) products[idx] = { ...products[idx], ...np }; else products.push(np); }); saveData(KEY_P, products); }
+      if (data.history)  { data.history.forEach(nt => { if (!history.some(h => h.id === nt.id)) history.push(nt); }); saveData(KEY_H, history); }
+      if (data.accounts) { data.accounts.forEach(na => { const idx = accounts.findIndex(a => a.id === na.id); if (idx >= 0) accounts[idx] = na; else accounts.push(na); }); saveData(KEY_A, accounts); }
+      if (data.parties)  { data.parties.forEach(np => { const idx = parties.findIndex(p => p.id === np.id); if (idx >= 0) parties[idx] = np; else parties.push(np); }); saveData(KEY_PT, parties); }
+      
+      showPage('dashboard'); showToast(`✅ Loaded data and synchronized!`);
+      event.target.value = ''; // reset
+    } catch(err) { showToast('⚠️ Error reading file.'); }
   };
-
-  reader.onerror = function() {
-    showToast('⚠️ Error reading file from device.');
-  };
-
   reader.readAsText(file);
 }
 
@@ -1239,52 +1566,14 @@ function handleFileImport(event) {
 // ================================================================
 function openModal(id)  { const m = document.getElementById(id); if (m) m.classList.add('open'); }
 function closeModal(id) { const m = document.getElementById(id); if (m) m.classList.remove('open'); }
+function showToast(msg, duration = 2800) { const t = document.getElementById('toast'); if (!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), duration); }
+function escHtml(str) { return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-function showToast(msg, duration = 2800) {
-  const t = document.getElementById('toast');
-  if (!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), duration);
-}
-
-function escHtml(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function updateHeaderDate() {
-  const now = new Date();
-  const el = document.getElementById('header-date');
-  if (el) {
-    el.innerHTML =
-      now.toLocaleDateString('en-IN', {weekday:'short', day:'2-digit', month:'short'}) +
-      '<br>' + now.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
-  }
-}
-
-// ================================================================
-//  APP INITIALIZATION & SERVICE WORKER
-// ================================================================
 document.addEventListener('DOMContentLoaded', function() {
-  updateHeaderDate();
-  setInterval(updateHeaderDate, 60000);
-
-  // Register service worker for offline use & PWA installability
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(function(err) {
-      console.log('SW registration error:', err);
-    });
-  }
-
-  // Modal backdrop click handlers
-  document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', function(e) {
-      if (e.target === overlay) overlay.classList.remove('open');
-    });
-  });
-
-  // Start on Dashboard
-  showPage('dashboard');
+  checkAndHideInstallButton();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  document.querySelectorAll('.modal-overlay').forEach(overlay => { overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.classList.remove('open'); }); });
+  if (checkAuthStatus()) showPage('dashboard');
 });
 </script>
 </body>

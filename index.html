@@ -773,16 +773,27 @@ function setType(type) {
   document.getElementById('submit-btn').className   = 'btn btn-' + type;
   document.getElementById('lbl-rec-party').textContent = type === 'sale' ? 'Sale To' : 'Purchase From';
   document.getElementById('group-rec-lift-date').style.display = type === 'sale' ? 'block' : 'none';
-}
-
-function updatePartyDatalist() {
-  // Replaced by custom autocomplete
+  
+  const sel = document.getElementById('rec-product');
+  const prevSelected = sel.value;
+  if (!products.length) {
+    sel.innerHTML = '<option disabled selected>— Add products first —</option>';
+  } else {
+    let filtered = products;
+    if (type === 'sale') filtered = products.filter(p => computeBalance(p) > 0);
+    if (!filtered.length) {
+      sel.innerHTML = '<option disabled selected>— No stock available —</option>';
+    } else {
+      sel.innerHTML = filtered.map(p => `<option value="${p.id}">${escHtml(p.name)} (${computeBalance(p)} ${p.unit||'units'})</option>`).join('');
+      if (prevSelected && Array.from(sel.options).some(o => o.value === prevSelected)) {
+        sel.value = prevSelected;
+      }
+    }
+  }
 }
 
 function renderRecordForm() {
-  const sel = document.getElementById('rec-product');
-  sel.innerHTML = products.length ? products.map(p => `<option value="${p.id}">${escHtml(p.name)} (${computeBalance(p)} ${p.unit||'units'})</option>`).join('') : '<option disabled selected>— Add products first —</option>';
-  updatePartyDatalist(); setType(txType);
+  setType(txType);
 }
 
 function recordTransaction() {

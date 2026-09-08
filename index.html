@@ -522,7 +522,7 @@ async function initCloudSync() {
         // Start all other listeners now that accounts are loaded
         db.collection('products').onSnapshot(s => { products = s.docs.map(d=>d.data()); renderProductList(); renderRecordForm(); renderDashboard(); });
         db.collection('parties').onSnapshot(s => { parties = s.docs.map(d=>d.data()); updatePartyDatalist(); renderParties(); });
-        db.collection('history').onSnapshot(s => { history = s.docs.map(d=>d.data()); renderHistory(); renderDashboard(); renderPendingLifts(); renderRecordForm(); });
+        db.collection('history').onSnapshot(s => { history = s.docs.map(d=>d.data()); renderHistory(); renderDashboard(); renderPendingLifts(); renderRecordForm(); renderProductList(); });
         
         document.getElementById('cloud-sync-overlay').style.display = 'none';
         if (checkAuthStatus()) showPage('dashboard');
@@ -941,13 +941,23 @@ function editProduct(id) {
 function cancelProductEdit() { editingProductId = null; clearProductForm(); document.getElementById('product-form-title').textContent = '➕ Add New Product'; document.getElementById('btn-save-product').textContent = 'Add Product'; document.getElementById('btn-cancel-product-edit').style.display = 'none'; document.getElementById('product-form-card').classList.remove('editing'); }
 function clearProductForm() { ['p-name', 'p-opening', 'p-threshold', 'p-unit', 'p-lift-by'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); }
 
+function renderProductItem(p) {
+  let actionHtml = currentUser?.role === 'admin' ? `<div class="master-actions"><button class="icon-btn edit" onclick="editProduct('${p.id}')">✏️</button><button class="icon-btn del" onclick="openDelete('product', '${p.id}')">🗑️</button></div>` : '';
+  return `<div class="master-item"><div class="master-info"><div class="master-name">${escHtml(p.name)}</div><div class="master-detail">Opening: ${p.opening} · Alert at: ${p.threshold} · Unit: ${p.unit||'—'}${p.liftingBy ? ` · Clear By: <strong style="color:var(--text)">${p.liftingBy}</strong>` : ''}</div><div class="master-detail" style="color:var(--gold);margin-top:4px;font-weight:600">Current Balance: ${computeBalance(p)} ${p.unit||'units'}</div></div>${actionHtml}</div>`;
+}
+
 function renderProductList() {
   const list = document.getElementById('product-list');
   if (!products.length) { list.innerHTML = `<div class="empty-state"><div class="emoji">📭</div><p>No products added yet.</p></div>`; return; }
-  list.innerHTML = products.map(p => {
-    let actionHtml = currentUser?.role === 'admin' ? `<div class="master-actions"><button class="icon-btn edit" onclick="editProduct('${p.id}')">✏️</button><button class="icon-btn del" onclick="openDelete('product', '${p.id}')">🗑️</button></div>` : '';
-    return `<div class="master-item"><div class="master-info"><div class="master-name">${escHtml(p.name)}</div><div class="master-detail">Opening: ${p.opening} · Alert at: ${p.threshold} · Unit: ${p.unit||'—'}${p.liftingBy ? ` · Clear By: <strong style="color:var(--text)">${p.liftingBy}</strong>` : ''}</div><div class="master-detail" style="color:var(--gold);margin-top:4px;font-weight:600">Current Balance: ${computeBalance(p)} ${p.unit||'units'}</div></div>${actionHtml}</div>`;
-  }).join('');
+  
+  const activeProducts = [], zeroProducts = [];
+  products.forEach(p => computeBalance(p) === 0 ? zeroProducts.push(p) : activeProducts.push(p));
+  
+  let html = activeProducts.map(renderProductItem).join('');
+  if (zeroProducts.length > 0) {
+    html += `<div class="zero-balance-header" onclick="document.getElementById('zero-master-list').style.display = document.getElementById('zero-master-list').style.display === 'none' ? 'block' : 'none';">Zero Balance Products (${zeroProducts.length}) <span>▼</span></div><div id="zero-master-list" style="display:none;">${zeroProducts.map(renderProductItem).join('')}</div>`;
+  }
+  list.innerHTML = html;
 }
 
 function saveParty() {

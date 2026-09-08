@@ -249,6 +249,7 @@
       </div>
     </div>
     <div class="header-actions">
+      <button class="header-btn btn-install" id="btn-install" style="display:none;" onclick="installPWA()">↓ Install App</button>
       <button class="header-btn btn-logout" onclick="performLogout()">Log out</button>
     </div>
   </header>
@@ -1027,6 +1028,31 @@ function openModal(id)  { const m = document.getElementById(id); if (m) m.classL
 function closeModal(id) { const m = document.getElementById(id); if (m) m.classList.remove('open'); }
 function showToast(msg, duration = 2800) { const t = document.getElementById('toast'); if (!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), duration); }
 function escHtml(str) { return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ================================================================
+//  PWA SETUP
+// ================================================================
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById('btn-install');
+  if (btn) btn.style.display = 'flex';
+});
+function installPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') document.getElementById('btn-install').style.display = 'none';
+      deferredPrompt = null;
+    });
+  }
+}
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg failed', err));
+  });
+}
 
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.modal-overlay').forEach(overlay => { overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.classList.remove('open'); }); });

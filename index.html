@@ -510,7 +510,7 @@ async function initCloudSync() {
         // Start all other listeners now that accounts are loaded
         db.collection('products').onSnapshot(s => { products = s.docs.map(d=>d.data()); renderProductList(); renderRecordForm(); renderDashboard(); });
         db.collection('parties').onSnapshot(s => { parties = s.docs.map(d=>d.data()); updatePartyDatalist(); renderParties(); });
-        db.collection('history').onSnapshot(s => { history = s.docs.map(d=>d.data()); renderHistory(); renderDashboard(); renderPendingLifts(); });
+        db.collection('history').onSnapshot(s => { history = s.docs.map(d=>d.data()); renderHistory(); renderDashboard(); renderPendingLifts(); renderRecordForm(); });
         
         document.getElementById('cloud-sync-overlay').style.display = 'none';
         if (checkAuthStatus()) showPage('dashboard');

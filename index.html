@@ -133,6 +133,15 @@
     .btn-add      { background: linear-gradient(135deg, var(--gold), var(--amber)); color: #111; }
     .btn:active   { transform: scale(0.98); }
 
+    /* CUSTOM AUTOCOMPLETE */
+    .autocomplete-wrapper { position: relative; }
+    .custom-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); z-index: 50; max-height: 200px; overflow-y: auto; box-shadow: var(--shadow); margin-top: 4px; display: none; }
+    .custom-dropdown-item { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 14px; cursor: pointer; color: var(--text); }
+    .custom-dropdown-item:last-child { border-bottom: none; }
+    .custom-dropdown-item:active { background: var(--surface); }
+    .custom-dropdown-name { font-weight: 600; display: block; }
+    .custom-dropdown-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; display: block; }
+
     /* HISTORY */
     .filter-row { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
     .filter-row::-webkit-scrollbar { display: none; }
@@ -299,8 +308,10 @@
     </div>
     <div class="form-group">
       <label class="form-label" id="lbl-rec-party" for="rec-party">Sale To</label>
-      <input class="form-control" id="rec-party" type="text" list="party-list" placeholder="Search or enter party name" />
-      <datalist id="party-list"></datalist>
+      <div class="autocomplete-wrapper">
+        <input class="form-control" id="rec-party" type="text" placeholder="Search or enter party name" autocomplete="off" />
+        <div id="rec-party-dropdown" class="custom-dropdown"></div>
+      </div>
     </div>
     <div class="form-group" id="group-rec-lift-date">
       <label class="form-label" for="rec-lift-date">Last Lifting Date (Optional)</label>
@@ -431,7 +442,7 @@
 <div class="modal-overlay" id="modal-pending-lifts"><div class="modal"><div class="modal-handle"></div><div class="modal-title">🚚 Pending Lifts</div><div id="pending-lifts-list"></div><div class="modal-actions"><button class="btn-m-cancel" onclick="closeModal('modal-pending-lifts')">Close</button></div></div></div>
 <div class="modal-overlay" id="modal-del-master"><div class="modal"><div class="modal-handle"></div><div class="modal-title" id="title-del-master">🗑️ Delete</div><p style="font-size:14px;color:var(--text-muted);line-height:1.5" id="msg-del-master"></p><div class="modal-actions"><button class="btn-m-cancel" onclick="closeModal('modal-del-master')">Cancel</button><button class="btn-m-confirm-red" id="confirm-del-master">Delete</button></div></div></div>
 <div class="modal-overlay" id="modal-del-tx"><div class="modal"><div class="modal-handle"></div><div class="modal-title">🗑️ Delete Transaction</div><p style="font-size:14px;color:var(--text-muted);line-height:1.5">Are you sure? Stock balance will be recalculated.</p><div class="modal-actions"><button class="btn-m-cancel" onclick="closeModal('modal-del-tx')">Cancel</button><button class="btn-m-confirm-red" id="confirm-del-tx">Delete</button></div></div></div>
-<div class="modal-overlay" id="modal-edit-tx"><div class="modal"><div class="modal-handle"></div><div class="modal-title">✏️ Edit Transaction</div><div style="margin-bottom:16px"><div class="type-toggle"><button class="type-btn sale active" id="edit-btn-sale" onclick="setEditType('sale')">🛒 Sale</button><button class="type-btn purchase" id="edit-btn-purchase" onclick="setEditType('purchase')">📥 Purchase</button></div></div><div class="form-group"><label class="form-label" for="edit-tx-product">Product</label><select class="form-control" id="edit-tx-product"></select></div><div class="form-group"><label class="form-label" for="edit-tx-qty">Quantity</label><input class="form-control" id="edit-tx-qty" type="number" min="1" /></div><div class="form-group"><label class="form-label" for="edit-tx-party">Party</label><input class="form-control" id="edit-tx-party" type="text" list="party-list" /></div><div class="form-group" id="group-edit-tx-lift-date"><label class="form-label" for="edit-tx-lift-date">Last Lifting Date</label><input class="form-control" id="edit-tx-lift-date" type="date" /></div><div class="form-group"><label class="form-label" for="edit-tx-note">Rate / Note</label><input class="form-control" id="edit-tx-note" type="text" maxlength="150" /></div><div class="modal-actions"><button class="btn-m-cancel" onclick="closeModal('modal-edit-tx')">Cancel</button><button class="btn-m-confirm-blue" onclick="saveEditTx()">Save Changes</button></div></div></div>
+<div class="modal-overlay" id="modal-edit-tx"><div class="modal"><div class="modal-handle"></div><div class="modal-title">✏️ Edit Transaction</div><div style="margin-bottom:16px"><div class="type-toggle"><button class="type-btn sale active" id="edit-btn-sale" onclick="setEditType('sale')">🛒 Sale</button><button class="type-btn purchase" id="edit-btn-purchase" onclick="setEditType('purchase')">📥 Purchase</button></div></div><div class="form-group"><label class="form-label" for="edit-tx-product">Product</label><select class="form-control" id="edit-tx-product"></select></div><div class="form-group"><label class="form-label" for="edit-tx-qty">Quantity</label><input class="form-control" id="edit-tx-qty" type="number" min="1" /></div><div class="form-group"><label class="form-label" for="edit-tx-party">Party</label><div class="autocomplete-wrapper"><input class="form-control" id="edit-tx-party" type="text" autocomplete="off" /><div id="edit-party-dropdown" class="custom-dropdown"></div></div></div><div class="form-group" id="group-edit-tx-lift-date"><label class="form-label" for="edit-tx-lift-date">Last Lifting Date</label><input class="form-control" id="edit-tx-lift-date" type="date" /></div><div class="form-group"><label class="form-label" for="edit-tx-note">Rate / Note</label><input class="form-control" id="edit-tx-note" type="text" maxlength="150" /></div><div class="modal-actions"><button class="btn-m-cancel" onclick="closeModal('modal-edit-tx')">Cancel</button><button class="btn-m-confirm-blue" onclick="saveEditTx()">Save Changes</button></div></div></div>
 
 <input type="file" id="app-file-importer" accept=".json,.html,.txt,application/json,text/html,text/plain" style="display:none;" onchange="handleFileImport(event)" />
 <div class="toast" id="toast"></div>
@@ -706,12 +717,49 @@ function renderPendingLifts() {
     const unit = (products.find(p => p.id === t.productId) || {}).unit || 'units';
     const isOverdue = t.liftingDeadline < new Date().toISOString().split('T')[0];
     const dateColor = isOverdue ? 'var(--red)' : 'var(--amber)';
-    return `<div class="master-item"><div class="master-info"><div class="master-name">${escHtml(t.productName)} <span style="font-size:12px;color:var(--text-muted);font-weight:400">(${t.qty} ${unit})</span></div><div class="master-detail">Party: <strong style="color:var(--text)">${escHtml(t.party || 'N/A')}</strong></div><div class="master-detail" style="color:${dateColor}">Deadline: ${t.liftingDeadline}</div></div><div class="master-actions"><button class="icon-btn check" onclick="markLifted('${t.id}')" title="Mark Lifted">✔️</button></div></div>`;
+    return `<div class="master-item" style="flex-direction:column; align-items:stretch; gap:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div class="master-info">
+          <div class="master-name">${escHtml(t.productName)}</div>
+          <div class="master-detail">Party: <strong style="color:var(--text)">${escHtml(t.party || 'N/A')}</strong></div>
+          <div class="master-detail" style="color:${dateColor}">Deadline: ${t.liftingDeadline}</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:space-between; background:var(--surface2); padding:8px 12px; border-radius:var(--radius-sm); border:1px dashed var(--border);">
+        <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Lift Qty:</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="number" id="lift-qty-${t.id}" value="${t.qty}" min="1" max="${t.qty}" style="width:70px; padding:6px; text-align:center; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:4px; font-weight:700; font-family:'Inter', sans-serif;" />
+          <span style="font-size:11px; color:var(--text-muted); width:28px; overflow:hidden; text-overflow:ellipsis;">${unit}</span>
+          <button class="icon-btn check" style="background:var(--green-glow); color:var(--green); border-color:var(--green);" onclick="processLift('${t.id}')" title="Submit Lift">✔️</button>
+        </div>
+      </div>
+    </div>`;
   }).join('');
 }
-function markLifted(id) {
-  db.collection('history').doc(id).update({ isLifted: true, liftedAt: new Date().toISOString() });
-  showToast('🚚 Synced: Marked as Lifted!');
+function processLift(id) {
+  const t = history.find(x => x.id === id);
+  if (!t) return;
+  const input = document.getElementById('lift-qty-' + id);
+  const liftQty = parseInt(input.value);
+  
+  if (!liftQty || liftQty < 1 || liftQty > t.qty) {
+    return showToast('⚠️ Invalid lift quantity!');
+  }
+
+  if (liftQty === t.qty) {
+    db.collection('history').doc(id).update({ isLifted: true, liftedAt: new Date().toISOString() });
+    showToast('🚚 Synced: Fully Lifted!');
+  } else {
+    const bal = t.qty - liftQty;
+    const newTxId = Date.now().toString();
+    
+    const liftedTx = { ...t, qty: liftQty, isLifted: true, liftedAt: new Date().toISOString() };
+    const pendingTx = { ...t, id: newTxId, qty: bal };
+    
+    db.collection('history').doc(id).set(liftedTx);
+    db.collection('history').doc(newTxId).set(pendingTx);
+    showToast(`🚚 Partially Lifted (${liftQty}). Balance pending: ${bal}`);
+  }
 }
 
 // ================================================================
@@ -728,11 +776,7 @@ function setType(type) {
 }
 
 function updatePartyDatalist() {
-  const dl = document.getElementById('party-list');
-  dl.innerHTML = parties.map(p => {
-    const display = p.nick ? `${p.nick} (${p.city})` : `(${p.city})`;
-    return `<option value="${p.name}">${display}</option>`;
-  }).join('');
+  // Replaced by custom autocomplete
 }
 
 function renderRecordForm() {
@@ -1054,8 +1098,51 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+function setupAutocomplete(inputId, dropdownId) {
+  const input = document.getElementById(inputId);
+  const dropdown = document.getElementById(dropdownId);
+  if (!input || !dropdown) return;
+  
+  document.addEventListener('click', (e) => {
+    if (e.target !== input && e.target !== dropdown && !dropdown.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
+
+  const updateDropdown = () => {
+    const val = input.value.toLowerCase();
+    if (!val) { dropdown.style.display = 'none'; return; }
+    
+    const matches = parties.filter(p => 
+      p.name.toLowerCase().includes(val) || 
+      (p.nick && p.nick.toLowerCase().includes(val)) || 
+      (p.city && p.city.toLowerCase().includes(val))
+    );
+    
+    if (matches.length > 0) {
+      dropdown.innerHTML = '';
+      matches.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'custom-dropdown-item';
+        div.innerHTML = `<span class="custom-dropdown-name">${escHtml(p.name)}</span><span class="custom-dropdown-meta">${escHtml(p.nick||'')} ${p.city ? `(${escHtml(p.city)})` : ''}</span>`;
+        // Use pointerdown to fire before input blur
+        div.onpointerdown = (e) => { e.preventDefault(); input.value = p.name; dropdown.style.display = 'none'; };
+        dropdown.appendChild(div);
+      });
+      dropdown.style.display = 'block';
+    } else {
+      dropdown.style.display = 'none';
+    }
+  };
+
+  input.addEventListener('input', updateDropdown);
+  input.addEventListener('focus', updateDropdown);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.modal-overlay').forEach(overlay => { overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.classList.remove('open'); }); });
+  setupAutocomplete('rec-party', 'rec-party-dropdown');
+  setupAutocomplete('edit-tx-party', 'edit-party-dropdown');
   initCloudSync(); // Starts the Firebase magic
 });
 </script>
